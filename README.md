@@ -11,9 +11,9 @@ alongside any page, and they stay with you across your Chrome browsers. No accou
 - **Auto-save** — your note is saved automatically a few seconds after you stop typing.
 - **Cross-device sync** — notes sync across the Chrome browsers you're signed into, via Chrome's
   built-in storage sync. Nothing is sent to any third-party server.
-- **Multiple notes** — keep several notes and switch between them from a dropdown. *(from PR 2)*
+- **Multiple notes** — keep several notes and switch between them from a dropdown.
 - **Dark mode & keyboard shortcut** — theme that follows your system, plus a hotkey to open the
-  panel. *(later PRs)*
+  panel. *(planned)*
 
 > Notes sync uses Chrome's `storage.sync`, which has a limited size budget — so there's a small
 > cap on the number of notes and on how long each note can be. The editor shows your usage.
@@ -51,10 +51,10 @@ suite green and add tests for new logic in your PR.
 
 ## Contributing
 
-- Work in **small, PR-sized changes** — see the roadmap and PR breakdown in
-  [`plan.md`](./plan.md).
-- Read [`CLAUDE.md`](./CLAUDE.md) for the architecture conventions (the `NotesRepository` storage
-  seam, storage caps, the layout contract, and the testing rule).
+- Work in **small, PR-sized changes**. The roadmap, architecture, and design decisions live in the
+  [`docs/`](./docs/) knowledge base.
+- Read [`CLAUDE.md`](./CLAUDE.md) for the working rules — the development cycle, branching/PR flow,
+  and the review checklist.
 
 ## License
 

@@ -1,7 +1,8 @@
 # CLAUDE.md — Agent onboarding & conventions
 
-Instructions for any agent (or human) picking up work on this repo. Read this **and** `plan.md`
-(the roadmap / source of truth for scope and the PR breakdown) before starting.
+Instructions for any agent (or human) picking up work on this repo. This file holds the **working
+rules** (dev cycle, branching, review, commands). Repo **knowledge** lives in the
+[`docs/`](./docs/) knowledge base — read it before starting.
 
 ## Branching & PR workflow (agent contributing rules)
 
@@ -21,7 +22,6 @@ Follow this on **every** change request — it is not optional:
    `git fetch --prune`.
 5. **Merges are squash-only.** The repo allows only "Squash and merge" (merge commits + rebase
    merging are disabled). Keep PRs coherent so the squashed commit is meaningful.
-6. **Branch naming:** `pr<N>-<slug>` matching the PR in `plan.md` (e.g. `pr2-multi-note-biome`).
 
 > Ops note: in this environment `cat` is aliased to `bat` and git's pager is `bat`, which mangles
 > piped/substituted text. Use `git commit -F <file>` for commit messages and `gh pr … --body-file
@@ -29,55 +29,81 @@ Follow this on **every** change request — it is not optional:
 > reading raw git output. `main` protection (PR-only) is desired but currently unavailable on this
 > private repo's plan — so the above discipline is what keeps `main` clean.
 
-## What this is
+## Development cycle (every change)
 
-A Chrome MV3 extension that puts a **Markdown notes editor in the browser side panel**
-(`chrome.sidePanel`). Notes sync across the user's own Chrome browsers via `chrome.storage.sync` —
-**no account, no cloud backend of ours**. Interaction model = Google Tasks, but for notes:
-a note dropdown + a View/Edit tab switch at the top.
+Every change — however small — runs through this cycle, in order:
+
+1. **Plan.** Think through the best solution and outline the changes *before* writing code.
+   Prefer reusing existing utilities/seams over adding new ones.
+2. **Implement.** Make the changes.
+3. **Test.** Add or extend unit tests for the new/changed logic.
+4. **Build / lint / format.** `npm run build`, `npm run lint`, `npm run format`, `npm test` — all green.
+5. **Review (thorough).** Self-review the diff against the checklist below before opening the PR.
+
+### Review checklist
+
+Do the review **with full context of what changed and why** (the goal of the change), then check:
+
+- **Correctness & goal:** it actually achieves the intended outcome, including edge / error / empty
+  states (empty note, quota exceeded, first run, only-one-note, offline, rapid edits).
+- **Optimization:** no unnecessary work, re-renders, or storage writes; the 3s autosave debounce and
+  sync write-rate limits are respected.
+- **Security:** untrusted note content stays sanitized (DOMPurify); no `{@html}` of unsanitized data;
+  no injection/XSS; least-privilege permissions; no remote code (MV3-safe).
+- **Modular / maintainable / clean:** honors the seams & conventions — persistence only via
+  `NotesRepository`, caps/limits only via `limits.ts`, the layout contract; no dead code, stray
+  `console.log`s, commented-out blocks, or leftover TODOs.
+- **Test coverage:** every meaningful function is covered; new logic has tests; the suite is green.
+- **Data compatibility:** any change to the stored note shape has a migration / back-compat story
+  (notes live in `chrome.storage.sync` on real users' machines).
+- **Accessibility & themes:** keyboard/focus/ARIA are sane; the UI looks right in both light and dark.
+- **Scope:** no unrelated changes slipped in.
+- **Docs:** do the docs need updating? Update the [`docs/`](./docs/) knowledge base / `CLAUDE.md` /
+  `README.md` when scope or behavior changed — and check for redundancy across docs to trim (keep
+  them lean; code is the source of truth).
+- **Gates pass:** build, lint, format, and tests are all green.
+- **Improvements & feedback:** surface any follow-up improvements, risks, or concerns to the user.
+- **Manual check:** for UI changes, load-unpacked and click through the affected flow — unit tests
+  don't cover the panel UI.
+
+Then follow the Branching & PR workflow above (commit → PR → share link).
+
+## Repo knowledge
+
+What the repo is, how it's structured, the roadmap, and why decisions were made live in
+[`docs/`](./docs/): [overview](./docs/overview.md) · [architecture](./docs/architecture.md)
+(structure, seams, the UI layout contract) · [roadmap](./docs/roadmap.md) ·
+[decisions](./docs/decisions.md). Keep those updated when scope or structure changes.
 
 ## Golden rules
 
-1. **Small, PR-sized changes.** One task from `plan.md` = one PR. Do not bundle unrelated work.
-   PR 1 is the only intentionally larger one (scaffold). Follow the PR order in `plan.md`.
+1. **Small, PR-sized changes.** Each change is its own small PR — don't bundle unrelated work. Pick
+   the next item from [`docs/roadmap.md`](./docs/roadmap.md) (the first item is the default) unless
+   the user's request points elsewhere.
 2. **Every meaningful function is unit-tested.** Tests live in `tests/` (mirroring `src/`), run
    with Vitest. A PR is not done until `npm test` is green and new logic is covered. Pure logic is
-   unit-tested; Svelte components are checked via the manual E2E steps in `plan.md`.
+   unit-tested; Svelte components are checked via manual E2E.
 3. **All persistence goes through `NotesRepository`.** `src/lib/storage/SyncNotesRepository.ts` is
-   the *only* file allowed to touch `chrome.storage.*`. This seam is what lets us swap backends
-   later — keep UI/stores backend-agnostic.
-4. **Respect the storage caps.** `chrome.storage.sync`: ~100 KB total, ~8 KB/item, 120 writes/min.
-   Hence: **max 10 notes**, a **per-note char budget**, and **3-second debounced** saves. All
-   cap/byte logic lives in `src/lib/storage/limits.ts`.
+   the *only* file allowed to touch `chrome.storage.*`. Keep UI/stores backend-agnostic.
+4. **Respect the storage caps.** All cap/byte/char logic lives in `src/lib/storage/limits.ts`:
+   **max 10 notes**, a **per-note char + byte budget**, and **3-second debounced** saves (the
+   reasoning is in [decisions](./docs/decisions.md)).
 5. **Render Markdown safely.** `src/lib/markdown/render.ts` renders **GFM** and MUST sanitize
-   output (DOMPurify) — note content is untrusted. Never inject raw HTML elsewhere.
-6. **Keep it store-publishable.** We ship load-unpacked today but may publish to the Chrome Web
-   Store later — avoid broad permissions, remote code, or anything that fails MV3 review.
-
-## Layout contract (don't drift from this)
-
-- **Top:** note selector (left) + View / Edit tabs.
-- **Middle:** Markdown textarea (Edit) or rendered GFM (View).
-- **Bottom-left:** tools (copy-all, info popover).
-- **Bottom-right:** character counter (used / limit).
-
-## Project layout
-
-See the tree in `plan.md`. Entry points: `src/background.ts` (service worker),
-`src/sidepanel/` (the panel UI). Shared logic in `src/lib/`, components in `src/components/`.
+   output (DOMPurify) — note content is untrusted. Never inject unsanitized HTML.
+6. **Keep it store-publishable.** Avoid broad permissions, remote code, or anything that fails MV3
+   review.
+7. **Explain non-obvious code.** When a change does something unusual, deviating, or extra, add a
+   short comment directly above it saying **why** (the decision/reason) — not what.
 
 ## Commands
 
 - `npm run dev` — Vite dev build with HMR.
 - `npm run build` — production build into `dist/` (this is what you Load unpacked).
 - `npm test` — run Vitest once. `npm run test:watch` for watch mode.
-- Lint/format: **Biome** — added in PR 2 (`npm run lint`, `npm run format`).
+- `npm run lint` — Biome check. `npm run format` — Biome write (format + safe fixes).
+- `npm run check` — svelte-check (type/Svelte diagnostics).
 
 ## Load the extension
 
 `npm run build` → open `chrome://extensions` → enable Developer mode → **Load unpacked** →
 select the `dist/` folder → click the toolbar icon to open the side panel.
-
-## Roadmap
-
-Full scope, decisions, and the ordered PR plan are in **`plan.md`**. Update it if scope changes.
