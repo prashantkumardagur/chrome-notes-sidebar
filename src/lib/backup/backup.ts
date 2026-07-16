@@ -8,7 +8,7 @@
 
 import { normalizeTitle } from "../notes/title";
 import { normalizeSettings, type Settings } from "../settings/settings";
-import { bodyFitsStorage, MAX_NOTES } from "../storage/limits";
+import { MAX_NOTES, noteFitsSyncItem } from "../storage/limits";
 import type { Note } from "../storage/NotesRepository";
 
 export const BACKUP_VERSION = 1;
@@ -57,9 +57,11 @@ function sanitizeNote(raw: unknown): Note | null {
   if (!isPlainObject(raw)) return null;
   const { id, title, body, createdAt, updatedAt } = raw;
   if (typeof id !== "string" || id.length === 0) return null;
-  if (typeof body !== "string" || !bodyFitsStorage(body)) return null;
+  if (typeof body !== "string") return null;
   if (typeof createdAt !== "number" || typeof updatedAt !== "number") return null;
-  return { id, title: normalizeTitle(typeof title === "string" ? title : ""), body, createdAt, updatedAt };
+  const note: Note = { id, title: normalizeTitle(typeof title === "string" ? title : ""), body, createdAt, updatedAt };
+  // Check the full serialized note, not just the body: an oversized title can overflow the sync item too.
+  return noteFitsSyncItem(note) ? note : null;
 }
 
 /**
@@ -77,6 +79,9 @@ export function parseBackup(raw: string): ImportResult {
   }
   if (!isPlainObject(data) || !Array.isArray(data.notes)) {
     throw new BackupParseError("That file isn't a recognized notes backup.");
+  }
+  if (data.version !== BACKUP_VERSION) {
+    throw new BackupParseError(`Unsupported backup version: ${JSON.stringify(data.version)}.`);
   }
 
   const settings = normalizeSettings(data.settings as Partial<Settings> | null | undefined);

@@ -7,11 +7,16 @@ import {
   serializeBackup,
 } from "../../src/lib/backup/backup";
 import { DEFAULT_SETTINGS } from "../../src/lib/settings/settings";
-import { MAX_NOTES, NOTE_BODY_BUDGET_BYTES } from "../../src/lib/storage/limits";
+import { MAX_NOTES, SYNC_ITEM_LIMIT_BYTES } from "../../src/lib/storage/limits";
 import type { Note } from "../../src/lib/storage/NotesRepository";
 
 function note(overrides: Partial<Note> = {}): Note {
   return { id: "n1", title: "Note", body: "hello", createdAt: 1, updatedAt: 2, ...overrides };
+}
+
+/** A minimal valid backup document, JSON-stringified, with overridable fields. */
+function backupJson(fields: { notes?: unknown; settings?: unknown; version?: unknown } = {}): string {
+  return JSON.stringify({ version: 1, notes: [], settings: DEFAULT_SETTINGS, ...fields });
 }
 
 describe("buildBackup / serializeBackup", () => {
@@ -45,25 +50,24 @@ describe("parseBackup", () => {
     expect(() => parseBackup("[]")).toThrow(BackupParseError);
   });
 
+  it("throws BackupParseError on an unrecognized/missing version", () => {
+    expect(() => parseBackup(JSON.stringify({ notes: [], settings: DEFAULT_SETTINGS }))).toThrow(BackupParseError);
+    expect(() => parseBackup(backupJson({ version: 2 }))).toThrow(BackupParseError);
+  });
+
   it("normalizes corrupt/partial settings back to defaults", () => {
-    const result = parseBackup(JSON.stringify({ notes: [], settings: { theme: "neon" } }));
+    const result = parseBackup(backupJson({ settings: { theme: "neon" } }));
     expect(result.settings).toEqual(DEFAULT_SETTINGS);
   });
 
   it("keeps valid notes and normalizes empty titles", () => {
-    const result = parseBackup(
-      JSON.stringify({
-        settings: DEFAULT_SETTINGS,
-        notes: [note({ id: "a", title: "" }), note({ id: "b", title: "B" })],
-      }),
-    );
+    const result = parseBackup(backupJson({ notes: [note({ id: "a", title: "" }), note({ id: "b", title: "B" })] }));
     expect(result.skippedCount).toBe(0);
     expect(result.notes).toEqual([note({ id: "a", title: "Untitled" }), note({ id: "b", title: "B" })]);
   });
 
   it("drops malformed notes and counts them as skipped", () => {
-    const raw = JSON.stringify({
-      settings: DEFAULT_SETTINGS,
+    const raw = backupJson({
       notes: [
         note({ id: "good" }),
         { id: "missing-body" },
@@ -77,19 +81,23 @@ describe("parseBackup", () => {
     expect(result.skippedCount).toBe(4);
   });
 
-  it("drops notes whose body exceeds the storage byte budget", () => {
-    const oversized = note({ id: "big", body: "x".repeat(NOTE_BODY_BUDGET_BYTES + 1) });
-    const result = parseBackup(JSON.stringify({ settings: DEFAULT_SETTINGS, notes: [oversized] }));
+  it("drops notes that don't fit within a single sync item", () => {
+    const oversized = note({ id: "big", body: "x".repeat(SYNC_ITEM_LIMIT_BYTES + 100) });
+    const result = parseBackup(backupJson({ notes: [oversized] }));
+    expect(result.notes).toEqual([]);
+    expect(result.skippedCount).toBe(1);
+  });
+
+  it("drops notes whose title alone would overflow the sync item", () => {
+    const hugeTitle = note({ id: "huge-title", title: "x".repeat(10_000) });
+    const result = parseBackup(backupJson({ notes: [hugeTitle] }));
     expect(result.notes).toEqual([]);
     expect(result.skippedCount).toBe(1);
   });
 
   it("deduplicates repeated ids, keeping the first", () => {
     const result = parseBackup(
-      JSON.stringify({
-        settings: DEFAULT_SETTINGS,
-        notes: [note({ id: "dup", title: "First" }), note({ id: "dup", title: "Second" })],
-      }),
+      backupJson({ notes: [note({ id: "dup", title: "First" }), note({ id: "dup", title: "Second" })] }),
     );
     expect(result.notes).toHaveLength(1);
     expect(result.notes[0].title).toBe("First");
@@ -98,13 +106,13 @@ describe("parseBackup", () => {
 
   it("caps notes at MAX_NOTES and skips the rest", () => {
     const notes = Array.from({ length: MAX_NOTES + 3 }, (_, i) => note({ id: `n${i}` }));
-    const result = parseBackup(JSON.stringify({ settings: DEFAULT_SETTINGS, notes }));
+    const result = parseBackup(backupJson({ notes }));
     expect(result.notes).toHaveLength(MAX_NOTES);
     expect(result.skippedCount).toBe(3);
   });
 
   it("accepts a missing settings field by falling back to defaults", () => {
-    const result = parseBackup(JSON.stringify({ notes: [] }));
+    const result = parseBackup(JSON.stringify({ version: 1, notes: [] }));
     expect(result.settings).toEqual(DEFAULT_SETTINGS);
     expect(result.notes).toEqual([]);
   });

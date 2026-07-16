@@ -142,7 +142,8 @@
   /** Restore a backup: replaces every note and setting. Returns the count of entries dropped as invalid. */
   async function importBackup(raw: string): Promise<number> {
     const imported = parseBackup(raw);
-    await commitPending();
+    // Drop any pending autosave rather than flushing it — replaceAll is about to discard it anyway.
+    scheduleSave.cancel();
     await repo.replaceAll(imported.notes);
     settings = await settingsRepo.save(imported.settings);
     await refreshList();
