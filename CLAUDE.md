@@ -23,11 +23,24 @@ Follow this on **every** change request — it is not optional:
 5. **Merges are squash-only.** The repo allows only "Squash and merge" (merge commits + rebase
    merging are disabled). Keep PRs coherent so the squashed commit is meaningful.
 
-> Ops note: in this environment `cat` is aliased to `bat` and git's pager is `bat`, which mangles
-> piped/substituted text. Use `git commit -F <file>` for commit messages and `gh pr … --body-file
-> <file>` for PR bodies (never a `cat`/heredoc substitution), and prefer `GIT_PAGER=cat` when
-> reading raw git output. `main` protection (PR-only) is desired but currently unavailable on this
-> private repo's plan — so the above discipline is what keeps `main` clean.
+> **Ops note — writing commit messages & PR bodies (read this, it bites).** In this environment
+> `cat` is aliased to `bat` and git's pager is `bat`, which mangles piped/substituted text. So:
+>
+> - **Author the message/body in a file with the Write tool** (your editor), not the shell. Even
+>   `cat > file <<'EOF' … EOF` to *create* a file is unsafe — `bat` decoration (line numbers, a
+>   `STDIN` header, ANSI codes, box-drawing) leaks into the file. This has shipped a corrupted PR
+>   body before.
+> - **Commit** with `git commit -F <file>`; **open a PR** with `gh pr create --body-file <file>`.
+>   Never build either from a `cat`/heredoc command substitution.
+> - **Editing an existing PR body:** `gh pr edit` / `gh pr view` use a GraphQL query that needs the
+>   `read:org` scope this token lacks, so they fail. Patch via REST instead:
+>   `gh api repos/<owner>/<repo>/pulls/<n> -X PATCH -F body=@<file>` (the `@` reads the file).
+> - **Reading raw git output**, prefer `GIT_PAGER=cat` (or `git … | cat` won't help — `cat` is
+>   `bat`; use `--no-pager`, e.g. `git --no-pager log`). Don't trust `git log`/`show` display for
+>   verifying exact content; redirect to a file and open it with the Read tool.
+>
+> `main` protection (PR-only) is desired but currently unavailable on this private repo's plan — so
+> the above discipline is what keeps `main` clean.
 
 ## Development cycle (every change)
 
