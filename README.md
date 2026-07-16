@@ -51,10 +51,10 @@ suite green and add tests for new logic in your PR.
 
 ## Contributing
 
-- Work in **small, PR-sized changes** — see the roadmap and PR breakdown in
-  [`plan.md`](./plan.md).
-- Read [`CLAUDE.md`](./CLAUDE.md) for the architecture conventions (the `NotesRepository` storage
-  seam, storage caps, the layout contract, and the testing rule).
+- Work in **small, PR-sized changes**. The roadmap, architecture, and design decisions live in the
+  [`docs/`](./docs/) knowledge base.
+- Read [`CLAUDE.md`](./CLAUDE.md) for the working rules — the development cycle, branching/PR flow,
+  and the review checklist.
 
 ## License
 
