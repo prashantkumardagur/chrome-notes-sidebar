@@ -37,6 +37,8 @@ export interface NotesRepository {
   delete(id: string): Promise<void>;
   /** Return the first note, creating a default one if none exist. */
   firstOrCreate(): Promise<Note>;
+  /** Replace the entire note set (e.g. restoring a backup), dropping anything not in `notes`. */
+  replaceAll(notes: Note[]): Promise<void>;
 }
 
 export function toMeta(note: Note): NoteMeta {

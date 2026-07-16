@@ -100,6 +100,32 @@ describe("SyncNotesRepository", () => {
     expect(await repo.list()).toHaveLength(MAX_NOTES);
   });
 
+  describe("replaceAll", () => {
+    it("replaces the note set and index, dropping notes not in the new set", async () => {
+      const { repo, store } = makeRepo();
+      const a = await repo.create("A");
+      await repo.create("B");
+
+      const restored = { ...a, title: "Restored A", body: "restored" };
+      await repo.replaceAll([restored]);
+
+      expect(await repo.list()).toEqual([{ id: a.id, title: "Restored A", updatedAt: a.updatedAt }]);
+      expect(store.has(`note:${a.id}`)).toBe(true);
+      expect(await repo.get(a.id)).toEqual(restored);
+      // The stale note ("B") must be gone from storage, not just the index.
+      const keys = [...store.keys()].filter((k) => k.startsWith("note:"));
+      expect(keys).toEqual([`note:${a.id}`]);
+    });
+
+    it("clears everything when given an empty list", async () => {
+      const { repo, store } = makeRepo();
+      await repo.create("A");
+      await repo.replaceAll([]);
+      expect(await repo.list()).toEqual([]);
+      expect([...store.keys()].some((k) => k.startsWith("note:"))).toBe(false);
+    });
+  });
+
   describe("firstOrCreate", () => {
     it("creates a default note when none exist", async () => {
       const { repo } = makeRepo();

@@ -4,13 +4,19 @@
   let {
     settings,
     onChange,
+    onExport,
+    onImport,
   }: {
     settings: Settings;
     onChange: (next: Settings) => void;
+    onExport: () => Promise<{ filename: string; content: string }>;
+    onImport: (raw: string) => Promise<number>;
   } = $props();
 
   let root: HTMLElement;
   let open = $state(false);
+  let fileInput: HTMLInputElement = $state()!;
+  let importMessage = $state<string | null>(null);
 
   const THEME_OPTIONS: { value: ThemePref; label: string }[] = [
     { value: 'system', label: 'System' },
@@ -29,6 +35,38 @@
 
   function setView(view: ViewPref) {
     if (view !== settings.view) onChange({ ...settings, view });
+  }
+
+  async function handleExport() {
+    importMessage = null;
+    const { filename, content } = await onExport();
+    const url = URL.createObjectURL(new Blob([content], { type: 'application/json' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function triggerImport() {
+    importMessage = null;
+    fileInput.click();
+  }
+
+  async function handleFileSelected(e: Event) {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    (e.target as HTMLInputElement).value = '';
+    if (!file) return;
+
+    if (!confirm('Importing will replace all existing notes and settings. Continue?')) return;
+
+    try {
+      const skipped = await onImport(await file.text());
+      importMessage = skipped > 0 ? `Imported — ${skipped} note(s) skipped as invalid.` : 'Import complete.';
+    } catch (err) {
+      console.error('Failed to import backup:', err);
+      importMessage = err instanceof Error ? err.message : 'Import failed.';
+    }
   }
 
   // Close the popover on an outside click or Escape (mirrors UtilityBar).
@@ -94,6 +132,24 @@
             </button>
           {/each}
         </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Backup</legend>
+        <div class="backup-actions">
+          <button type="button" onclick={handleExport}>Export</button>
+          <button type="button" onclick={triggerImport}>Import</button>
+        </div>
+        {#if importMessage}
+          <p class="backup-message">{importMessage}</p>
+        {/if}
+        <input
+          bind:this={fileInput}
+          type="file"
+          accept="application/json,.json"
+          class="visually-hidden"
+          onchange={handleFileSelected}
+        />
       </fieldset>
     </div>
   {/if}
@@ -193,5 +249,46 @@
     background: var(--bg);
     color: var(--text);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  }
+
+  .backup-actions {
+    display: flex;
+    gap: 6px;
+  }
+
+  .backup-actions button {
+    appearance: none;
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 8px;
+    cursor: pointer;
+  }
+
+  .backup-actions button:hover {
+    background: var(--bg-subtle);
+  }
+
+  .backup-message {
+    margin: 6px 0 0;
+    color: var(--text-muted);
+    font-size: 11px;
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 </style>
