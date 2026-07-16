@@ -13,10 +13,7 @@ export interface Debounced<A extends unknown[]> {
   pending(): boolean;
 }
 
-export function debounce<A extends unknown[]>(
-  fn: (...args: A) => void,
-  waitMs: number,
-): Debounced<A> {
+export function debounce<A extends unknown[]>(fn: (...args: A) => void, waitMs: number): Debounced<A> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   let lastArgs: A | undefined;
 

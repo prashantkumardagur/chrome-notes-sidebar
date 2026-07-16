@@ -8,7 +8,7 @@
  * All numbers and math live here so the rest of the app never hard-codes limits.
  */
 
-import type { Note } from './NotesRepository';
+import type { Note } from "./NotesRepository";
 
 /** Maximum number of notes a user can keep. */
 export const MAX_NOTES = 10;

@@ -1,55 +1,129 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import ViewEditTabs from '../components/ViewEditTabs.svelte';
   import MarkdownEditor from '../components/MarkdownEditor.svelte';
   import MarkdownView from '../components/MarkdownView.svelte';
+  import NoteSelector from '../components/NoteSelector.svelte';
+  import ViewEditTabs from '../components/ViewEditTabs.svelte';
+  import { nextUntitledTitle, normalizeTitle } from '../lib/notes/title';
+  import type { Note, NoteMeta } from '../lib/storage/NotesRepository';
+  import { MAX_NOTES } from '../lib/storage/limits';
   import { SyncNotesRepository } from '../lib/storage/SyncNotesRepository';
-  import type { Note } from '../lib/storage/NotesRepository';
   import { debounce } from '../lib/util/debounce';
 
   const AUTOSAVE_DELAY_MS = 3000;
   const repo = new SyncNotesRepository();
 
-  let note = $state<Note | null>(null);
+  let notes = $state<NoteMeta[]>([]);
+  let current = $state<Note | null>(null);
   let body = $state('');
   let mode = $state<'edit' | 'view'>('edit');
   let status = $state<'idle' | 'unsaved' | 'saving' | 'saved'>('idle');
 
-  const save = debounce(async () => {
-    if (!note) return;
+  const scheduleSave = debounce(() => {
+    void persistCurrent();
+  }, AUTOSAVE_DELAY_MS);
+
+  async function refreshList() {
+    notes = await repo.list();
+  }
+
+  async function persistCurrent() {
+    if (!current) return;
     status = 'saving';
-    const updated: Note = { ...note, body };
     try {
-      await repo.save(updated);
-      note = updated;
+      current = await repo.save({ ...current, body });
+      await refreshList();
       status = 'saved';
     } catch (err) {
       console.error('Failed to save note:', err);
       status = 'unsaved';
     }
-  }, AUTOSAVE_DELAY_MS);
+  }
+
+  /** Persist any pending edit immediately (before switching/closing). */
+  async function commitPending() {
+    scheduleSave.cancel();
+    if (status === 'unsaved') await persistCurrent();
+  }
+
+  async function loadNote(id: string) {
+    const note = await repo.get(id);
+    if (note) {
+      current = note;
+      body = note.body;
+      status = 'saved';
+    }
+  }
 
   function onEdit() {
     status = 'unsaved';
-    save();
+    scheduleSave();
+  }
+
+  async function selectNote(id: string) {
+    if (id === current?.id) return;
+    await commitPending();
+    await loadNote(id);
+  }
+
+  async function createNote() {
+    if (notes.length >= MAX_NOTES) return;
+    await commitPending();
+    const note = await repo.create(nextUntitledTitle(notes.map((n) => n.title)));
+    await refreshList();
+    current = note;
+    body = note.body;
+    status = 'saved';
+    mode = 'edit';
+  }
+
+  async function renameNote(id: string, title: string) {
+    const clean = normalizeTitle(title);
+    await repo.rename(id, clean);
+    await refreshList();
+    if (current?.id === id) current = { ...current, title: clean };
+  }
+
+  async function deleteNote(id: string) {
+    // Deleting the current note discards its unsaved edits by design.
+    if (id === current?.id) scheduleSave.cancel();
+    await repo.delete(id);
+    await refreshList();
+    if (current?.id === id) {
+      if (notes.length > 0) await loadNote(notes[0].id);
+      else {
+        const note = await repo.firstOrCreate();
+        await refreshList();
+        current = note;
+        body = note.body;
+        status = 'saved';
+      }
+    }
   }
 
   onMount(async () => {
-    note = await repo.firstOrCreate();
-    body = note.body;
+    await refreshList();
+    if (notes.length === 0) {
+      const note = await repo.firstOrCreate();
+      await refreshList();
+      current = note;
+      body = note.body;
+    } else {
+      await loadNote(notes[0].id);
+    }
     status = 'saved';
   });
 
   // Flush a pending autosave if the panel is being hidden/closed.
   $effect(() => {
     const flushIfHidden = () => {
-      if (document.visibilityState === 'hidden') save.flush();
+      if (document.visibilityState === 'hidden') scheduleSave.flush();
     };
     document.addEventListener('visibilitychange', flushIfHidden);
-    window.addEventListener('pagehide', save.flush);
+    window.addEventListener('pagehide', scheduleSave.flush);
     return () => {
       document.removeEventListener('visibilitychange', flushIfHidden);
-      window.removeEventListener('pagehide', save.flush);
+      window.removeEventListener('pagehide', scheduleSave.flush);
     };
   });
 
@@ -67,8 +141,20 @@
 
 <div class="app">
   <header class="topbar">
-    <div class="note-name" title={note?.title ?? ''}>{note?.title ?? 'Loading…'}</div>
-    <ViewEditTabs bind:mode />
+    <div class="row">
+      <NoteSelector
+        {notes}
+        currentId={current?.id ?? null}
+        max={MAX_NOTES}
+        onSelect={selectNote}
+        onCreate={createNote}
+        onRename={renameNote}
+        onDelete={deleteNote}
+      />
+    </div>
+    <div class="row tabs-row">
+      <ViewEditTabs bind:mode />
+    </div>
   </header>
 
   <main class="content">
@@ -94,20 +180,21 @@
 
   .topbar {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+    flex-direction: column;
+    gap: 6px;
     padding: 8px 12px;
     border-bottom: 1px solid var(--border);
     background: var(--bg);
   }
 
-  .note-name {
-    font-weight: 600;
-    font-size: 13px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  .row {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .tabs-row {
+    justify-content: flex-end;
   }
 
   .content {

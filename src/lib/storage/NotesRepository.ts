@@ -29,8 +29,8 @@ export interface NotesRepository {
   get(id: string): Promise<Note | null>;
   /** Create a new empty note. Throws if the note limit is reached. */
   create(title?: string): Promise<Note>;
-  /** Persist a note's contents (updates `updatedAt` and the index). */
-  save(note: Note): Promise<void>;
+  /** Persist a note's contents; returns the stored note with a fresh `updatedAt`. */
+  save(note: Note): Promise<Note>;
   /** Change a note's title. */
   rename(id: string, title: string): Promise<void>;
   /** Remove a note and its index entry. */

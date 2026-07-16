@@ -9,12 +9,15 @@
     "build": "vite build",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
+    "lint": "biome check .",
+    "format": "biome check --write .",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^7.2.0",
+    "@biomejs/biome": "^2.5.4",
     "@crxjs/vite-plugin": "^2.7.1",
+    "@sveltejs/vite-plugin-svelte": "^7.2.0",
     "@tsconfig/svelte": "^5.0.8",
     "@types/chrome": "^0.2.2",
     "jsdom": "^29.1.1",

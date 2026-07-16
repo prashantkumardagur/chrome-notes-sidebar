@@ -5,8 +5,8 @@
  * before it reaches the DOM. Never bypass this to inject note content as raw HTML.
  */
 
-import { marked } from 'marked';
-import DOMPurify from 'dompurify';
+import DOMPurify from "dompurify";
+import { marked } from "marked";
 
 marked.setOptions({
   gfm: true,
@@ -18,10 +18,10 @@ marked.setOptions({
  * @returns sanitized HTML ready to assign to `innerHTML`.
  */
 export function renderMarkdown(source: string): string {
-  const rawHtml = marked.parse(source ?? '', { async: false }) as string;
+  const rawHtml = marked.parse(source ?? "", { async: false }) as string;
   return DOMPurify.sanitize(rawHtml, {
     USE_PROFILES: { html: true },
     // Allow GFM task-list checkboxes to render (they are disabled inputs).
-    ADD_ATTR: ['checked', 'disabled', 'type'],
+    ADD_ATTR: ["checked", "disabled", "type"],
   });
 }
