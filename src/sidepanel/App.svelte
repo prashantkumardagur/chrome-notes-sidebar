@@ -4,9 +4,12 @@
   import MarkdownEditor from '../components/MarkdownEditor.svelte';
   import MarkdownView from '../components/MarkdownView.svelte';
   import NoteSelector from '../components/NoteSelector.svelte';
+  import SettingsMenu from '../components/SettingsMenu.svelte';
   import UtilityBar from '../components/UtilityBar.svelte';
   import ViewEditTabs from '../components/ViewEditTabs.svelte';
   import { nextUntitledTitle, normalizeTitle } from '../lib/notes/title';
+  import { applyTheme, DEFAULT_SETTINGS, resolveViewMode, type Settings } from '../lib/settings/settings';
+  import { SyncSettingsRepository } from '../lib/settings/SyncSettingsRepository';
   import type { Note, NoteMeta } from '../lib/storage/NotesRepository';
   import { bodyFitsStorage, MAX_NOTE_CHARS, MAX_NOTES } from '../lib/storage/limits';
   import { SyncNotesRepository } from '../lib/storage/SyncNotesRepository';
@@ -14,12 +17,22 @@
 
   const AUTOSAVE_DELAY_MS = 3000;
   const repo = new SyncNotesRepository();
+  const settingsRepo = new SyncSettingsRepository();
 
   let notes = $state<NoteMeta[]>([]);
   let current = $state<Note | null>(null);
   let body = $state('');
   let mode = $state<'edit' | 'view'>('edit');
   let status = $state<'saved' | 'saving' | 'error'>('saved');
+  let settings = $state<Settings>(DEFAULT_SETTINGS);
+
+  // Keep the document theme in sync with the preference.
+  $effect(() => applyTheme(settings.theme));
+
+  function saveSettings(next: Settings) {
+    settings = next;
+    void settingsRepo.save(next);
+  }
 
   const scheduleSave = debounce(() => {
     void persistCurrent();
@@ -71,6 +84,8 @@
     if (id === current?.id) return;
     await commitPending();
     await loadNote(id);
+    // The view preference decides the mode on note change ('persistent' keeps it).
+    mode = resolveViewMode(settings.view, mode);
   }
 
   async function createNote() {
@@ -109,6 +124,7 @@
   }
 
   onMount(async () => {
+    settings = await settingsRepo.get();
     await refreshList();
     if (notes.length === 0) {
       const note = await repo.firstOrCreate();
@@ -162,13 +178,16 @@
   </main>
 
   <footer class="statusbar">
-    <UtilityBar
-      {body}
-      updatedAt={current?.updatedAt ?? null}
-      charLimit={MAX_NOTE_CHARS}
-      noteCount={notes.length}
-      maxNotes={MAX_NOTES}
-    />
+    <div class="tools">
+      <UtilityBar
+        {body}
+        updatedAt={current?.updatedAt ?? null}
+        charLimit={MAX_NOTE_CHARS}
+        noteCount={notes.length}
+        maxNotes={MAX_NOTES}
+      />
+      <SettingsMenu {settings} onChange={saveSettings} />
+    </div>
     <div class="status" aria-live="polite">
       <span class="save" class:saved={isSaved}>{statusText}</span>
       <span class="dot" class:saved={isSaved} aria-hidden="true"></span>
@@ -208,6 +227,12 @@
     background: var(--bg-subtle);
     color: var(--text-muted);
     font-size: 11px;
+  }
+
+  .tools {
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
 
   .status {
