@@ -80,8 +80,9 @@ What the repo is, how it's structured, the roadmap, and why decisions were made 
 2. **Every meaningful function is unit-tested.** Tests live in `tests/` (mirroring `src/`), run
    with Vitest. A PR is not done until `npm test` is green and new logic is covered. Pure logic is
    unit-tested; Svelte components are checked via manual E2E.
-3. **All persistence goes through `NotesRepository`.** `src/lib/storage/SyncNotesRepository.ts` is
-   the *only* file allowed to touch `chrome.storage.*`. Keep UI/stores backend-agnostic.
+3. **All persistence goes through a repository seam.** `src/lib/storage/SyncNotesRepository.ts`
+   (notes) and `src/lib/settings/SyncSettingsRepository.ts` (settings) are the *only* files allowed
+   to touch `chrome.storage.*`. Keep UI/stores backend-agnostic.
 4. **Respect the storage caps.** All cap/byte/char logic lives in `src/lib/storage/limits.ts`:
    **max 10 notes**, a **per-note char + byte budget**, and **3-second debounced** saves (the
    reasoning is in [decisions](./docs/decisions.md)).

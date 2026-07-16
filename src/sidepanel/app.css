@@ -7,12 +7,17 @@
   --accent: #2563eb;
   --code-bg: #f1f3f6;
 
-  color-scheme: light dark;
+  color-scheme: light;
 }
 
-/* Follow the OS theme now; an explicit toggle arrives in a later PR. */
+/*
+ * Theme resolution. `data-theme` is set by the settings menu (see settings.ts):
+ * absent = follow the OS; "light"/"dark" force that theme regardless of the OS.
+ * The dark token block is duplicated (once for the OS default, once for the
+ * forced override) because a media query can't be OR-ed with a plain selector.
+ */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #1c1f24;
     --bg-subtle: #24282e;
     --border: #343a42;
@@ -20,7 +25,21 @@
     --text-muted: #9aa2ad;
     --accent: #6ea0ff;
     --code-bg: #24282e;
+
+    color-scheme: dark;
   }
+}
+
+:root[data-theme="dark"] {
+  --bg: #1c1f24;
+  --bg-subtle: #24282e;
+  --border: #343a42;
+  --text: #e6e8eb;
+  --text-muted: #9aa2ad;
+  --accent: #6ea0ff;
+  --code-bg: #24282e;
+
+  color-scheme: dark;
 }
 
 * {
