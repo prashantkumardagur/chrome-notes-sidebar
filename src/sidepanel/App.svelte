@@ -19,6 +19,7 @@
   const AUTOSAVE_DELAY_MS = 3000;
   const repo = new SyncNotesRepository();
   const settingsRepo = new SyncSettingsRepository();
+  const version = chrome.runtime.getManifest().version;
 
   let notes = $state<NoteMeta[]>([]);
   let current = $state<Note | null>(null);
@@ -209,6 +210,7 @@
     <div class="tools">
       <UtilityBar
         {body}
+        {version}
         updatedAt={current?.updatedAt ?? null}
         charLimit={MAX_NOTE_CHARS}
         noteCount={notes.length}
