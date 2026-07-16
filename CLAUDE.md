@@ -3,6 +3,32 @@
 Instructions for any agent (or human) picking up work on this repo. Read this **and** `plan.md`
 (the roadmap / source of truth for scope and the PR breakdown) before starting.
 
+## Branching & PR workflow (agent contributing rules)
+
+Follow this on **every** change request — it is not optional:
+
+1. **One branch per change/feature.** When the user asks for a change, first decide whether it
+   belongs on the **current** branch or a **new** one. Related work on the same in-flight feature
+   stays on that branch; a **different** change/feature gets its **own** branch. Never mix
+   unrelated changes in one branch/PR.
+2. **Always branch from an up-to-date `main`.** Before starting new work:
+   `git checkout main` → `git pull --ff-only origin main` (confirm local `main` == `origin/main`)
+   → `git checkout -b <branch>`. Only create the new branch once `main` matches remote.
+3. **Commit → open a PR → share the link.** Once you've made a commit on a branch, push it and
+   open a PR (base `main`), then give the user the PR URL.
+4. **After merge, delete the branch everywhere.** When a PR is merged, delete the branch on
+   GitHub **and** locally (`git push origin --delete <branch>` / `git branch -d <branch>`), then
+   `git fetch --prune`.
+5. **Merges are squash-only.** The repo allows only "Squash and merge" (merge commits + rebase
+   merging are disabled). Keep PRs coherent so the squashed commit is meaningful.
+6. **Branch naming:** `pr<N>-<slug>` matching the PR in `plan.md` (e.g. `pr2-multi-note-biome`).
+
+> Ops note: in this environment `cat` is aliased to `bat` and git's pager is `bat`, which mangles
+> piped/substituted text. Use `git commit -F <file>` for commit messages and `gh pr … --body-file
+> <file>` for PR bodies (never a `cat`/heredoc substitution), and prefer `GIT_PAGER=cat` when
+> reading raw git output. `main` protection (PR-only) is desired but currently unavailable on this
+> private repo's plan — so the above discipline is what keeps `main` clean.
+
 ## What this is
 
 A Chrome MV3 extension that puts a **Markdown notes editor in the browser side panel**
