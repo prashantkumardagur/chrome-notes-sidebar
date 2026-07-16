@@ -5,8 +5,7 @@ lists only **upcoming** and **deferred** work. Each item is one small PR. Take t
 by default; pick a different one only if the user's request points there.
 
 ## Next
-- **Keyboard shortcut.** `commands` in the manifest; background opens the panel
-  (`sidePanel.open({ windowId })`).
+- Nothing queued — pull the next item up from **Deferred**, or take a fresh request.
 
 ## Deferred
 Export / import (`.md`/`.json`), search, TTS, password lock, and the Web Store publish package

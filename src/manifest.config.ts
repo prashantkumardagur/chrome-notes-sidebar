@@ -17,6 +17,16 @@ export default defineManifest({
     service_worker: "src/background.ts",
     type: "module",
   },
+  commands: {
+    // Keep in sync with OPEN_PANEL_COMMAND in src/lib/commands/openPanel.ts.
+    "open-panel": {
+      suggested_key: {
+        default: "Ctrl+Shift+Y",
+        mac: "Command+Shift+Y",
+      },
+      description: "Open Notes Sidebar",
+    },
+  },
   permissions: ["storage", "sidePanel"],
   side_panel: {
     default_path: "src/sidepanel/index.html",

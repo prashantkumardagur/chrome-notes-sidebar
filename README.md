@@ -12,8 +12,9 @@ alongside any page, and they stay with you across your Chrome browsers. No accou
 - **Cross-device sync** — notes sync across the Chrome browsers you're signed into, via Chrome's
   built-in storage sync. Nothing is sent to any third-party server.
 - **Multiple notes** — keep several notes and switch between them from a dropdown.
-- **Dark mode & keyboard shortcut** — theme that follows your system, plus a hotkey to open the
-  panel. *(planned)*
+- **Dark mode & keyboard shortcut** — pick a theme (System / Light / Dark) from the settings
+  gear, and open the panel with a hotkey (`Ctrl/Cmd+Shift+Y`, rebindable at
+  `chrome://extensions/shortcuts`).
 
 > Notes sync uses Chrome's `storage.sync`, which has a limited size budget — so there's a small
 > cap on the number of notes and on how long each note can be. The editor shows your usage.
@@ -34,7 +35,7 @@ npm run build      # production build into dist/
 2. Go to `chrome://extensions`.
 3. Enable **Developer mode** (top-right).
 4. Click **Load unpacked** and select the generated **`dist/`** folder.
-5. Click the extension's toolbar icon to open the notes side panel.
+5. Click the extension's toolbar icon — or press `Ctrl/Cmd+Shift+Y` — to open the notes side panel.
 
 After code changes, re-run `npm run build` (or keep `npm run dev` running) and hit the reload
 icon on the extension card.

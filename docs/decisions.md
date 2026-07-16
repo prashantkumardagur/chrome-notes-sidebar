@@ -19,6 +19,7 @@ Key choices and the reasoning. Terse on purpose — code is the source of truth 
 | **Svelte 5 + Vite 8 + CRXJS** | Small/fast UI; CRXJS handles MV3 manifest + HMR. |
 | **Repository seams** (`NotesRepository`, `SettingsRepository` — the only files touching `chrome.storage`) | Backend swap (local/cloud) becomes a one-file change per domain. |
 | **Settings in `storage.sync`** (`{theme, view}`); theme via `data-theme` on `:root` | Prefs follow the user across devices; a forced `data-theme` overrides `prefers-color-scheme`. |
+| **Keyboard shortcut** via `commands` + `onCommand`; `windowId` read off the event `tab` | `sidePanel.open` needs a user gesture — reading `windowId` synchronously (no `await`) keeps it. |
 | **Biome**, recommended rules, 2-space / 120-width | One fast tool for lint + format; `.svelte` left to svelte-check. |
 | **Vitest**, one spec per meaningful function | Fast unit coverage of pure logic; components covered by manual E2E. |
 | Load-unpacked now, stay **MV3-publishable** | Ship immediately; keep the door open to the Web Store. |
