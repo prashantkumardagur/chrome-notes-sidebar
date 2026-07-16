@@ -5,7 +5,6 @@ lists only **upcoming** and **deferred** work. Each item is one small PR. Take t
 by default; pick a different one only if the user's request points there.
 
 ## Next
-- **Utility bar (bottom-left).** Copy-all-text; info popover (last updated, char/note count).
 - **Dark mode / theme.** CSS-variable tokens; follow OS `prefers-color-scheme`; persisted manual toggle.
 - **Keyboard shortcut.** `commands` in the manifest; background opens the panel
   (`sidePanel.open({ windowId })`).
