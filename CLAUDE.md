@@ -29,6 +29,43 @@ Follow this on **every** change request — it is not optional:
 > reading raw git output. `main` protection (PR-only) is desired but currently unavailable on this
 > private repo's plan — so the above discipline is what keeps `main` clean.
 
+## Development cycle (every change)
+
+Every change — however small — runs through this cycle, in order:
+
+1. **Plan.** Think through the best solution and outline the changes *before* writing code.
+   Prefer reusing existing utilities/seams over adding new ones.
+2. **Implement.** Make the changes.
+3. **Test.** Add or extend unit tests for the new/changed logic.
+4. **Build / lint / format.** `npm run build`, `npm run lint`, `npm run format`, `npm test` — all green.
+5. **Review (thorough).** Self-review the diff against the checklist below before opening the PR.
+
+### Review checklist
+
+Do the review **with full context of what changed and why** (the goal of the change), then check:
+
+- **Correctness & goal:** it actually achieves the intended outcome, including edge / error / empty
+  states (empty note, quota exceeded, first run, only-one-note, offline, rapid edits).
+- **Optimization:** no unnecessary work, re-renders, or storage writes; the 3s autosave debounce and
+  sync write-rate limits are respected.
+- **Security:** untrusted note content stays sanitized (DOMPurify); no `{@html}` of unsanitized data;
+  no injection/XSS; least-privilege permissions; no remote code (MV3-safe).
+- **Modular / maintainable / clean:** honors the seams & conventions — persistence only via
+  `NotesRepository`, caps/limits only via `limits.ts`, the layout contract; no dead code, stray
+  `console.log`s, commented-out blocks, or leftover TODOs.
+- **Test coverage:** every meaningful function is covered; new logic has tests; the suite is green.
+- **Data compatibility:** any change to the stored note shape has a migration / back-compat story
+  (notes live in `chrome.storage.sync` on real users' machines).
+- **Accessibility & themes:** keyboard/focus/ARIA are sane; the UI looks right in both light and dark.
+- **Scope & docs:** no unrelated changes slipped in; `plan.md` / `CLAUDE.md` / `README.md` updated if
+  scope or behavior changed.
+- **Gates pass:** build, lint, format, and tests are all green.
+- **Improvements & feedback:** surface any follow-up improvements, risks, or concerns to the user.
+- **Manual check:** for UI changes, load-unpacked and click through the affected flow — unit tests
+  don't cover the panel UI.
+
+Then follow the Branching & PR workflow above (commit → PR → share link).
+
 ## What this is
 
 A Chrome MV3 extension that puts a **Markdown notes editor in the browser side panel**
