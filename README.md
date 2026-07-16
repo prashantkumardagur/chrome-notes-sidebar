@@ -2,6 +2,7 @@
 
 A minimalist **Markdown notes** extension that lives in Chrome's **side panel** — write notes
 alongside any page, and they stay with you across your Chrome browsers. No account, no servers.
+Written entirely by Claude Code.
 
 ## Features
 
@@ -57,6 +58,11 @@ suite green and add tests for new logic in your PR.
 - Read [`CLAUDE.md`](./CLAUDE.md) for the working rules — the development cycle, branching/PR flow,
   and the review checklist.
 
+## Privacy
+
+No account, no backend — your notes live only in Chrome's `storage.sync` and are never sent to us or
+any third party. See the [privacy policy](./docs/privacy-policy.md) for details.
+
 ## License
 
-TBD.
+[MIT](./LICENSE).

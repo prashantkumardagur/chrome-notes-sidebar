@@ -3,12 +3,14 @@
 
   let {
     body,
+    version,
     updatedAt,
     charLimit,
     noteCount,
     maxNotes,
   }: {
     body: string;
+    version: string;
     updatedAt: number | null;
     charLimit: number;
     noteCount: number;
@@ -94,6 +96,8 @@
         <dd>{body.length}/{charLimit}</dd>
         <dt>Notes</dt>
         <dd>{noteCount}/{maxNotes}</dd>
+        <dt>Version</dt>
+        <dd>{version}</dd>
       </dl>
     </div>
   {/if}
