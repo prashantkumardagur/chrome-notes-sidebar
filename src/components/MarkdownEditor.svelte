@@ -2,13 +2,15 @@
   let {
     value = $bindable(''),
     oninput,
-  }: { value: string; oninput?: () => void } = $props();
+    maxlength,
+  }: { value: string; oninput?: () => void; maxlength?: number } = $props();
 </script>
 
 <textarea
   class="editor"
   bind:value
   {oninput}
+  {maxlength}
   spellcheck="true"
   placeholder="Write your note in Markdown…"
   aria-label="Markdown editor"

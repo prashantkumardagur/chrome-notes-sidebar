@@ -1,12 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import CharCounter from '../components/CharCounter.svelte';
   import MarkdownEditor from '../components/MarkdownEditor.svelte';
   import MarkdownView from '../components/MarkdownView.svelte';
   import NoteSelector from '../components/NoteSelector.svelte';
   import ViewEditTabs from '../components/ViewEditTabs.svelte';
   import { nextUntitledTitle, normalizeTitle } from '../lib/notes/title';
   import type { Note, NoteMeta } from '../lib/storage/NotesRepository';
-  import { MAX_NOTES } from '../lib/storage/limits';
+  import { bodyFitsStorage, MAX_NOTE_CHARS, MAX_NOTES } from '../lib/storage/limits';
   import { SyncNotesRepository } from '../lib/storage/SyncNotesRepository';
   import { debounce } from '../lib/util/debounce';
 
@@ -17,7 +18,7 @@
   let current = $state<Note | null>(null);
   let body = $state('');
   let mode = $state<'edit' | 'view'>('edit');
-  let status = $state<'idle' | 'unsaved' | 'saving' | 'saved'>('idle');
+  let status = $state<'saved' | 'saving' | 'error'>('saved');
 
   const scheduleSave = debounce(() => {
     void persistCurrent();
@@ -29,6 +30,11 @@
 
   async function persistCurrent() {
     if (!current) return;
+    // Don't attempt to store a note that exceeds the sync item budget.
+    if (!bodyFitsStorage(body)) {
+      status = 'error';
+      return;
+    }
     status = 'saving';
     try {
       current = await repo.save({ ...current, body });
@@ -36,14 +42,14 @@
       status = 'saved';
     } catch (err) {
       console.error('Failed to save note:', err);
-      status = 'unsaved';
+      status = 'error';
     }
   }
 
   /** Persist any pending edit immediately (before switching/closing). */
   async function commitPending() {
     scheduleSave.cancel();
-    if (status === 'unsaved') await persistCurrent();
+    if (status === 'saving') await persistCurrent();
   }
 
   async function loadNote(id: string) {
@@ -56,7 +62,7 @@
   }
 
   function onEdit() {
-    status = 'unsaved';
+    status = 'saving';
     scheduleSave();
   }
 
@@ -128,15 +134,8 @@
   });
 
   const charCount = $derived(body.length);
-  const statusLabel = $derived(
-    status === 'saving'
-      ? 'Saving…'
-      : status === 'unsaved'
-        ? 'Unsaved changes'
-        : status === 'saved'
-          ? 'Saved'
-          : '',
-  );
+  const isSaved = $derived(status === 'saved');
+  const statusText = $derived(status === 'error' ? 'Not saved' : status === 'saved' ? 'Saved' : 'Saving');
 </script>
 
 <div class="app">
@@ -155,15 +154,19 @@
 
   <main class="content">
     {#if mode === 'edit'}
-      <MarkdownEditor bind:value={body} oninput={onEdit} />
+      <MarkdownEditor bind:value={body} oninput={onEdit} maxlength={MAX_NOTE_CHARS} />
     {:else}
       <MarkdownView source={body} />
     {/if}
   </main>
 
   <footer class="statusbar">
-    <div class="tools" aria-live="polite">{statusLabel}</div>
-    <div class="counter">{charCount.toLocaleString()} characters</div>
+    <div class="tools" aria-hidden="true"></div>
+    <div class="status" aria-live="polite">
+      <span class="save" class:saved={isSaved}>{statusText}</span>
+      <span class="dot" class:saved={isSaved} aria-hidden="true"></span>
+      <CharCounter used={charCount} limit={MAX_NOTE_CHARS} />
+    </div>
   </footer>
 </div>
 
@@ -198,5 +201,29 @@
     background: var(--bg-subtle);
     color: var(--text-muted);
     font-size: 11px;
+  }
+
+  .status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .save {
+    color: var(--text-muted);
+  }
+
+  /* The dot doubles as the separator between the save state and the counter:
+     red while saving / on error, green once saved. */
+  .dot {
+    flex: none;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #dc2626;
+  }
+
+  .dot.saved {
+    background: #16a34a;
   }
 </style>
