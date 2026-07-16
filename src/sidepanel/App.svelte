@@ -141,20 +141,16 @@
 
 <div class="app">
   <header class="topbar">
-    <div class="row">
-      <NoteSelector
-        {notes}
-        currentId={current?.id ?? null}
-        max={MAX_NOTES}
-        onSelect={selectNote}
-        onCreate={createNote}
-        onRename={renameNote}
-        onDelete={deleteNote}
-      />
-    </div>
-    <div class="row tabs-row">
-      <ViewEditTabs bind:mode />
-    </div>
+    <NoteSelector
+      {notes}
+      currentId={current?.id ?? null}
+      max={MAX_NOTES}
+      onSelect={selectNote}
+      onCreate={createNote}
+      onRename={renameNote}
+      onDelete={deleteNote}
+    />
+    <ViewEditTabs bind:mode />
   </header>
 
   <main class="content">
@@ -180,21 +176,11 @@
 
   .topbar {
     display: flex;
-    flex-direction: column;
-    gap: 6px;
+    align-items: center;
+    gap: 8px;
     padding: 8px 12px;
     border-bottom: 1px solid var(--border);
     background: var(--bg);
-  }
-
-  .row {
-    display: flex;
-    align-items: center;
-    min-width: 0;
-  }
-
-  .tabs-row {
-    justify-content: flex-end;
   }
 
   .content {
