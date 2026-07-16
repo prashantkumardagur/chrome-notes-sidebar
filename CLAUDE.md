@@ -22,8 +22,6 @@ Follow this on **every** change request — it is not optional:
    `git fetch --prune`.
 5. **Merges are squash-only.** The repo allows only "Squash and merge" (merge commits + rebase
    merging are disabled). Keep PRs coherent so the squashed commit is meaningful.
-6. **Branch naming:** `pr<N>-<slug>` matching the PR in [`docs/roadmap.md`](./docs/roadmap.md)
-   (e.g. `pr2-multi-note-biome`); use a `chore-`/`docs-` prefix for non-roadmap work.
 
 > Ops note: in this environment `cat` is aliased to `bat` and git's pager is `bat`, which mangles
 > piped/substituted text. Use `git commit -F <file>` for commit messages and `gh pr … --body-file
@@ -59,8 +57,10 @@ Do the review **with full context of what changed and why** (the goal of the cha
 - **Data compatibility:** any change to the stored note shape has a migration / back-compat story
   (notes live in `chrome.storage.sync` on real users' machines).
 - **Accessibility & themes:** keyboard/focus/ARIA are sane; the UI looks right in both light and dark.
-- **Scope & docs:** no unrelated changes slipped in; the [`docs/`](./docs/) knowledge base,
-  `CLAUDE.md`, or `README.md` updated if scope or behavior changed.
+- **Scope:** no unrelated changes slipped in.
+- **Docs:** do the docs need updating? Update the [`docs/`](./docs/) knowledge base / `CLAUDE.md` /
+  `README.md` when scope or behavior changed — and check for redundancy across docs to trim (keep
+  them lean; code is the source of truth).
 - **Gates pass:** build, lint, format, and tests are all green.
 - **Improvements & feedback:** surface any follow-up improvements, risks, or concerns to the user.
 - **Manual check:** for UI changes, load-unpacked and click through the affected flow — unit tests
@@ -77,8 +77,9 @@ What the repo is, how it's structured, the roadmap, and why decisions were made 
 
 ## Golden rules
 
-1. **Small, PR-sized changes.** One task from [`docs/roadmap.md`](./docs/roadmap.md) = one PR. Do
-   not bundle unrelated work. Follow the PR order there.
+1. **Small, PR-sized changes.** Each change is its own small PR — don't bundle unrelated work. Pick
+   the next item from [`docs/roadmap.md`](./docs/roadmap.md) (the first item is the default) unless
+   the user's request points elsewhere.
 2. **Every meaningful function is unit-tested.** Tests live in `tests/` (mirroring `src/`), run
    with Vitest. A PR is not done until `npm test` is green and new logic is covered. Pure logic is
    unit-tested; Svelte components are checked via manual E2E.
