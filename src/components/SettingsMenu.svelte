@@ -59,7 +59,7 @@
     title="Settings"
     aria-label="Settings"
   >
-    ⚙
+    <span class="glyph" aria-hidden="true">⚙</span>
   </button>
 
   {#if open}
@@ -123,6 +123,13 @@
     line-height: 1;
     padding: 4px 9px;
     cursor: pointer;
+  }
+
+  /* The gear glyph's visual center sits below its font box; nudge it up so it
+     reads as vertically centered within the button. */
+  .glyph {
+    display: block;
+    transform: translateY(-1px);
   }
 
   .tool:hover {
