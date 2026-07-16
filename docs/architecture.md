@@ -7,7 +7,7 @@ The code is the source of truth — this is just the map.
 ```
 src/
   manifest.config.ts        MV3 manifest (CRXJS), authored in TS
-  background.ts             service worker: opens the panel on icon click + keyboard command
+  background.ts             service worker: opens the panel on icon click + toggles it on the keyboard command
   sidepanel/
     index.html, main.ts     panel document + Svelte mount
     App.svelte              top-level state + layout orchestration (load/select/save notes)
@@ -29,7 +29,7 @@ src/
       SettingsRepository.ts    interface — the settings storage seam
       SyncSettingsRepository.ts chrome.storage.sync implementation
       settings.ts              types, defaults, theme apply + view-mode resolution
-    commands/openPanel.ts      keyboard-command handler (opens the side panel)
+    commands/panelToggle.ts    keyboard-command handler (toggles the side panel open/closed)
     markdown/render.ts         GFM -> sanitized HTML
     util/debounce.ts           trailing-edge debounce (autosave)
     util/time.ts               relative "last edited" formatting
