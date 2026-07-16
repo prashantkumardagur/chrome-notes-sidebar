@@ -105,17 +105,23 @@
     display: inline-flex;
   }
 
-  /* Standalone button, styled to match UtilityBar's tools but not part of its group. */
+  /* Standalone button, styled to match UtilityBar's tools but not part of its group.
+     The gear glyph renders small and low on the baseline, so bump its size and
+     center it with flex; the trimmed vertical padding keeps the box height equal
+     to the neighbouring copy/info buttons. */
   .tool {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     appearance: none;
     border: 1px solid var(--border);
     border-radius: 8px;
     background: var(--bg);
     color: var(--text-muted);
     font: inherit;
-    font-size: 13px;
+    font-size: 15px;
     line-height: 1;
-    padding: 5px 9px;
+    padding: 4px 9px;
     cursor: pointer;
   }
 
