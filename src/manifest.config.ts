@@ -18,13 +18,13 @@ export default defineManifest({
     type: "module",
   },
   commands: {
-    // Keep in sync with OPEN_PANEL_COMMAND in src/lib/commands/openPanel.ts.
+    // Keep the id in sync with TOGGLE_PANEL_COMMAND in src/lib/commands/panelToggle.ts.
     "open-panel": {
       suggested_key: {
         default: "Ctrl+Shift+Y",
         mac: "Command+Shift+Y",
       },
-      description: "Open Notes Sidebar",
+      description: "Toggle Notes Sidebar",
     },
   },
   permissions: ["storage", "sidePanel"],

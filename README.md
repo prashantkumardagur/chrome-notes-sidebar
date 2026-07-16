@@ -13,7 +13,7 @@ alongside any page, and they stay with you across your Chrome browsers. No accou
   built-in storage sync. Nothing is sent to any third-party server.
 - **Multiple notes** — keep several notes and switch between them from a dropdown.
 - **Dark mode & keyboard shortcut** — pick a theme (System / Light / Dark) from the settings
-  gear, and open the panel with a hotkey (`Ctrl/Cmd+Shift+Y`, rebindable at
+  gear, and toggle the panel open/closed with a hotkey (`Ctrl/Cmd+Shift+Y`, rebindable at
   `chrome://extensions/shortcuts`).
 
 > Notes sync uses Chrome's `storage.sync`, which has a limited size budget — so there's a small
