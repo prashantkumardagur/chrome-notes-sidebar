@@ -7,6 +7,7 @@
   import SettingsMenu from '../components/SettingsMenu.svelte';
   import UtilityBar from '../components/UtilityBar.svelte';
   import ViewEditTabs from '../components/ViewEditTabs.svelte';
+  import { backupFileName, buildBackup, parseBackup, serializeBackup } from '../lib/backup/backup';
   import { nextUntitledTitle, normalizeTitle } from '../lib/notes/title';
   import { applyTheme, DEFAULT_SETTINGS, resolveViewMode, type Settings } from '../lib/settings/settings';
   import { SyncSettingsRepository } from '../lib/settings/SyncSettingsRepository';
@@ -106,21 +107,48 @@
     if (current?.id === id) current = { ...current, title: clean };
   }
 
+  /** Select the first note in the list, creating a default one if none exist. */
+  async function selectFirstNote() {
+    if (notes.length > 0) {
+      await loadNote(notes[0].id);
+      return;
+    }
+    const note = await repo.firstOrCreate();
+    await refreshList();
+    current = note;
+    body = note.body;
+    status = 'saved';
+  }
+
   async function deleteNote(id: string) {
     // Deleting the current note discards its unsaved edits by design.
     if (id === current?.id) scheduleSave.cancel();
     await repo.delete(id);
     await refreshList();
-    if (current?.id === id) {
-      if (notes.length > 0) await loadNote(notes[0].id);
-      else {
-        const note = await repo.firstOrCreate();
-        await refreshList();
-        current = note;
-        body = note.body;
-        status = 'saved';
-      }
-    }
+    if (current?.id === id) await selectFirstNote();
+  }
+
+  /** Gather every note's full contents (list() only has metas) plus settings into one backup document. */
+  async function exportBackup(): Promise<{ filename: string; content: string }> {
+    // Flush any pending autosave first, so a rapid edit isn't silently missing from the export.
+    await commitPending();
+    const metas = await repo.list();
+    const fullNotes = (await Promise.all(metas.map((m) => repo.get(m.id)))).filter(
+      (n): n is Note => n !== null,
+    );
+    return { filename: backupFileName(), content: serializeBackup(buildBackup(settings, fullNotes)) };
+  }
+
+  /** Restore a backup: replaces every note and setting. Returns the count of entries dropped as invalid. */
+  async function importBackup(raw: string): Promise<number> {
+    const imported = parseBackup(raw);
+    // Drop any pending autosave rather than flushing it — replaceAll is about to discard it anyway.
+    scheduleSave.cancel();
+    await repo.replaceAll(imported.notes);
+    settings = await settingsRepo.save(imported.settings);
+    await refreshList();
+    await selectFirstNote();
+    return imported.skippedCount;
   }
 
   onMount(async () => {
@@ -186,7 +214,7 @@
         noteCount={notes.length}
         maxNotes={MAX_NOTES}
       />
-      <SettingsMenu {settings} onChange={saveSettings} />
+      <SettingsMenu {settings} onChange={saveSettings} onExport={exportBackup} onImport={importBackup} />
     </div>
     <div class="status" aria-live="polite">
       <span class="save" class:saved={isSaved}>{statusText}</span>

@@ -73,6 +73,22 @@ export class SyncNotesRepository implements NotesRepository {
     await this.writeIndex(index.filter((m) => m.id !== id));
   }
 
+  async replaceAll(notes: Note[]): Promise<void> {
+    const index = await this.list();
+    const nextIds = new Set(notes.map((n) => n.id));
+    const stale = index.filter((m) => !nextIds.has(m.id));
+
+    // Write the new set (and index) before removing anything stale, so a failed
+    // write (e.g. a quota error) leaves the existing notes intact instead of wiping them.
+    const items: Record<string, Note> = {};
+    for (const note of notes) items[noteKey(note.id)] = note;
+    if (Object.keys(items).length > 0) await this.area.set(items);
+    await this.writeIndex(notes.map(toMeta));
+
+    // Remove one at a time: the injected StorageArea (real or fake) only needs to support single-key remove.
+    for (const meta of stale) await this.area.remove(noteKey(meta.id));
+  }
+
   async firstOrCreate(): Promise<Note> {
     const index = await this.list();
     if (index.length > 0) {

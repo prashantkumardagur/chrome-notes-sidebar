@@ -19,8 +19,9 @@ src/
     MarkdownView.svelte     renders sanitized GFM
     CharCounter.svelte      used/limit counter, warns near cap
     UtilityBar.svelte       bottom-left tools: copy-all + info popover
-    SettingsMenu.svelte     bottom-left gear: theme + view-on-switch prefs
+    SettingsMenu.svelte     bottom-left gear: theme + view-on-switch prefs + backup export/import
   lib/
+    backup/backup.ts          build/serialize/parse a full notes+settings JSON backup
     storage/
       NotesRepository.ts       interface — the notes storage seam
       SyncNotesRepository.ts   chrome.storage.sync implementation
@@ -43,6 +44,13 @@ tests/                         Vitest, mirrors src/ (one spec per meaningful mod
   swapping/adding a backend is a one-file change per domain.
 - **All caps/limits live in `limits.ts`** (note count, per-note byte + character budgets).
 - **Markdown is always sanitized** in `render.ts` (DOMPurify); note content is untrusted.
+- **Backup import is a full replace**, not a merge: `NotesRepository.replaceAll` swaps the entire
+  note set (writing the new set before removing anything stale, so a failed write can't wipe
+  existing notes). `parseBackup` sanitizes/caps untrusted import data and rejects anything whose
+  `version` doesn't match `BACKUP_VERSION`. Known limitation of the write-before-delete ordering:
+  because ids rarely overlap, storage briefly holds both the old and new note sets, so importing a
+  large backup over an already-large store can transiently exceed the ~100 KB sync total and fail —
+  safely, leaving existing notes intact (data loss is the worse failure, hence the ordering).
 
 ## Storage layout (`chrome.storage.sync`)
 - `notes:index` → ordered `NoteMeta[]` (`{id, title, updatedAt}`).

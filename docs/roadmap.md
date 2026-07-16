@@ -8,5 +8,5 @@ by default; pick a different one only if the user's request points there.
 - Nothing queued — pull the next item up from **Deferred**, or take a fresh request.
 
 ## Deferred
-Export / import (`.md`/`.json`), search, TTS, password lock, and the Web Store publish package
-(final icons, screenshots, description, privacy policy).
+Per-note `.md` export, search, TTS, password lock, and the Web Store publish package (final icons,
+screenshots, description, privacy policy).
