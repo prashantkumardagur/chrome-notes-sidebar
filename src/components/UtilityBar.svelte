@@ -60,29 +60,30 @@
 </script>
 
 <div class="tools" bind:this={root}>
-  <button
-    type="button"
-    class="tool"
-    class:copied
-    onclick={copyAll}
-    disabled={isEmpty}
-    title={isEmpty ? 'Nothing to copy' : 'Copy all text'}
-    aria-label="Copy all text"
-  >
-    {copied ? 'Copied' : 'Copy'}
-  </button>
-
-  <button
-    type="button"
-    class="tool icon"
-    onclick={toggleInfo}
-    aria-haspopup="dialog"
-    aria-expanded={open}
-    title="Note info"
-    aria-label="Note info"
-  >
-    ⓘ
-  </button>
+  <div class="group">
+    <button
+      type="button"
+      class="tool"
+      class:copied
+      onclick={copyAll}
+      disabled={isEmpty}
+      title={isEmpty ? 'Nothing to copy' : 'Copy all text'}
+      aria-label="Copy all text"
+    >
+      {copied ? '✓' : '⧉'}
+    </button>
+    <button
+      type="button"
+      class="tool"
+      onclick={toggleInfo}
+      aria-haspopup="dialog"
+      aria-expanded={open}
+      title="Note info"
+      aria-label="Note info"
+    >
+      ⓘ
+    </button>
+  </div>
 
   {#if open}
     <div class="popover" role="dialog" aria-label="Note info">
@@ -101,23 +102,40 @@
 <style>
   .tools {
     position: relative;
-    display: flex;
-    align-items: center;
-    gap: 4px;
+    display: inline-flex;
+  }
+
+  .group {
+    display: inline-flex;
+    align-items: stretch;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
   }
 
   .tool {
     appearance: none;
-    border: 1px solid var(--border);
-    background: var(--bg);
+    border: none;
+    background: transparent;
     color: var(--text-muted);
     font: inherit;
-    font-size: 11px;
-    font-weight: 600;
+    font-size: 13px;
     line-height: 1;
-    padding: 4px 8px;
-    border-radius: 6px;
+    padding: 5px 9px;
     cursor: pointer;
+  }
+
+  /* Connect the buttons into one group with a shared divider between them. */
+  .tool + .tool {
+    border-left: 1px solid var(--border);
+  }
+
+  .tool:first-child {
+    border-radius: 8px 0 0 8px;
+  }
+
+  .tool:last-child {
+    border-radius: 0 8px 8px 0;
   }
 
   .tool:hover:not(:disabled) {
@@ -132,12 +150,6 @@
 
   .tool.copied {
     color: #16a34a;
-    border-color: #16a34a;
-  }
-
-  .tool.icon {
-    padding: 4px 7px;
-    font-size: 13px;
   }
 
   .popover {
