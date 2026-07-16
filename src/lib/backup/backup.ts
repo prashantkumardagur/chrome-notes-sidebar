@@ -8,7 +8,7 @@
 
 import { normalizeTitle } from "../notes/title";
 import { normalizeSettings, type Settings } from "../settings/settings";
-import { MAX_NOTES, noteFitsSyncItem } from "../storage/limits";
+import { bodyFitsStorage, MAX_NOTES, noteFitsSyncItem } from "../storage/limits";
 import type { Note } from "../storage/NotesRepository";
 
 export const BACKUP_VERSION = 1;
@@ -60,8 +60,11 @@ function sanitizeNote(raw: unknown): Note | null {
   if (typeof body !== "string") return null;
   if (typeof createdAt !== "number" || typeof updatedAt !== "number") return null;
   const note: Note = { id, title: normalizeTitle(typeof title === "string" ? title : ""), body, createdAt, updatedAt };
-  // Check the full serialized note, not just the body: an oversized title can overflow the sync item too.
-  return noteFitsSyncItem(note) ? note : null;
+  // Hold imports to the same budget the editor enforces on save: the body must be within the
+  // char + byte budget (`bodyFitsStorage`), and the full note — title and key envelope included —
+  // must fit a single sync item (`noteFitsSyncItem`). Otherwise a note could import but fail to
+  // re-save, or overflow the real per-item quota on write.
+  return bodyFitsStorage(note.body) && noteFitsSyncItem(note) ? note : null;
 }
 
 /**

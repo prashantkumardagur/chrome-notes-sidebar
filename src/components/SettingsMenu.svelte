@@ -39,13 +39,18 @@
 
   async function handleExport() {
     importMessage = null;
-    const { filename, content } = await onExport();
-    const url = URL.createObjectURL(new Blob([content], { type: 'application/json' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    link.click();
-    URL.revokeObjectURL(url);
+    try {
+      const { filename, content } = await onExport();
+      const url = URL.createObjectURL(new Blob([content], { type: 'application/json' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to export backup:', err);
+      importMessage = err instanceof Error ? err.message : 'Export failed.';
+    }
   }
 
   function triggerImport() {
@@ -141,7 +146,7 @@
           <button type="button" onclick={triggerImport}>Import</button>
         </div>
         {#if importMessage}
-          <p class="backup-message">{importMessage}</p>
+          <p class="backup-message" role="status" aria-live="polite">{importMessage}</p>
         {/if}
         <input
           bind:this={fileInput}

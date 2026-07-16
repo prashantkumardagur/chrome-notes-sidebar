@@ -7,7 +7,7 @@ import {
   serializeBackup,
 } from "../../src/lib/backup/backup";
 import { DEFAULT_SETTINGS } from "../../src/lib/settings/settings";
-import { MAX_NOTES, SYNC_ITEM_LIMIT_BYTES } from "../../src/lib/storage/limits";
+import { MAX_NOTE_CHARS, MAX_NOTES, SYNC_ITEM_LIMIT_BYTES } from "../../src/lib/storage/limits";
 import type { Note } from "../../src/lib/storage/NotesRepository";
 
 function note(overrides: Partial<Note> = {}): Note {
@@ -84,6 +84,15 @@ describe("parseBackup", () => {
   it("drops notes that don't fit within a single sync item", () => {
     const oversized = note({ id: "big", body: "x".repeat(SYNC_ITEM_LIMIT_BYTES + 100) });
     const result = parseBackup(backupJson({ notes: [oversized] }));
+    expect(result.notes).toEqual([]);
+    expect(result.skippedCount).toBe(1);
+  });
+
+  it("drops notes whose body exceeds the editor char budget even if the bytes would fit", () => {
+    // Over MAX_NOTE_CHARS but small enough (ASCII) to fit a sync item — the editor couldn't
+    // re-save it, so import must reject it the same way `bodyFitsStorage` does on save.
+    const overChars = note({ id: "over-chars", body: "x".repeat(MAX_NOTE_CHARS + 1) });
+    const result = parseBackup(backupJson({ notes: [overChars] }));
     expect(result.notes).toEqual([]);
     expect(result.skippedCount).toBe(1);
   });
