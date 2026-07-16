@@ -32,8 +32,8 @@ Follow this on **every** change request — it is not optional:
 >   body before.
 > - **Commit** with `git commit -F <file>`; **open a PR** with `gh pr create --body-file <file>`.
 >   Never build either from a `cat`/heredoc command substitution.
-> - **Editing an existing PR body:** `gh pr edit` / `gh pr view` use a GraphQL query that needs the
->   `read:org` scope this token lacks, so they fail. Patch via REST instead:
+> - **Editing an existing PR body:** `gh pr edit <n> --body-file <file>`. If it errors about a
+>   `read:org` scope (some tokens lack it — that GraphQL path needs it), fall back to REST:
 >   `gh api repos/<owner>/<repo>/pulls/<n> -X PATCH -F body=@<file>` (the `@` reads the file).
 > - **Reading raw git output**, prefer `GIT_PAGER=cat` (or `git … | cat` won't help — `cat` is
 >   `bat`; use `--no-pager`, e.g. `git --no-pager log`). Don't trust `git log`/`show` display for
