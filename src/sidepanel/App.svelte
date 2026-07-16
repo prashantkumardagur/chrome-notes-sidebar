@@ -4,6 +4,7 @@
   import MarkdownEditor from '../components/MarkdownEditor.svelte';
   import MarkdownView from '../components/MarkdownView.svelte';
   import NoteSelector from '../components/NoteSelector.svelte';
+  import UtilityBar from '../components/UtilityBar.svelte';
   import ViewEditTabs from '../components/ViewEditTabs.svelte';
   import { nextUntitledTitle, normalizeTitle } from '../lib/notes/title';
   import type { Note, NoteMeta } from '../lib/storage/NotesRepository';
@@ -161,7 +162,13 @@
   </main>
 
   <footer class="statusbar">
-    <div class="tools" aria-hidden="true"></div>
+    <UtilityBar
+      {body}
+      updatedAt={current?.updatedAt ?? null}
+      charLimit={MAX_NOTE_CHARS}
+      noteCount={notes.length}
+      maxNotes={MAX_NOTES}
+    />
     <div class="status" aria-live="polite">
       <span class="save" class:saved={isSaved}>{statusText}</span>
       <span class="dot" class:saved={isSaved} aria-hidden="true"></span>

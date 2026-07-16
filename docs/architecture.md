@@ -18,6 +18,7 @@ src/
     MarkdownEditor.svelte   plain markdown textarea (enforces maxlength)
     MarkdownView.svelte     renders sanitized GFM
     CharCounter.svelte      used/limit counter, warns near cap
+    UtilityBar.svelte       bottom-left tools: copy-all + info popover
   lib/
     storage/
       NotesRepository.ts       interface — the storage seam
@@ -25,6 +26,7 @@ src/
       limits.ts                all caps + byte/char math
     markdown/render.ts         GFM -> sanitized HTML
     util/debounce.ts           trailing-edge debounce (autosave)
+    util/time.ts               relative "last edited" formatting
     notes/title.ts             default/normalized note titles
 tests/                         Vitest, mirrors src/ (one spec per meaningful module)
 ```
@@ -42,5 +44,5 @@ tests/                         Vitest, mirrors src/ (one spec per meaningful mod
 ## UI layout contract (don't drift)
 - **Top:** note selector (left) + View / Edit tabs (right).
 - **Middle:** Markdown textarea (Edit) or rendered GFM (View).
-- **Bottom-left:** tools (copy-all, info popover) — *planned*.
+- **Bottom-left:** tools (copy-all, info popover).
 - **Bottom-right:** save-state dot + character counter (`used/limit`).
