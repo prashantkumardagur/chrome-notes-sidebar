@@ -73,6 +73,10 @@ describe("highlightMatchesInView", () => {
       // The scrolled element is the 3rd occurrence (index 2), centered.
       expect(scroll.mock.instances[0]).toBe(marks[2]);
       expect(scroll).toHaveBeenCalledWith({ block: "center" });
+      // Only that occurrence is marked active; the rest are plain highlights.
+      expect(marks[2].classList.contains("search-hit-active")).toBe(true);
+      const active = marks.filter((m) => m.classList.contains("search-hit-active"));
+      expect(active).toEqual([marks[2]]);
     } finally {
       // Restore the jsdom default (scrollIntoView absent).
       delete (HTMLElement.prototype as { scrollIntoView?: unknown }).scrollIntoView;

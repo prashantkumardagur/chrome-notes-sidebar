@@ -13,8 +13,10 @@
  * guards. render.ts stays the sole HTML producer.
  */
 
-/** Class used on the `<mark>` elements this module adds, so we can find/remove them. */
+/** Class on every `<mark>` this module adds, so we can find/remove them. */
 const HIGHLIGHT_CLASS = "search-hit";
+/** Extra class on the single occurrence nearest the click, styled to stand out. */
+const ACTIVE_CLASS = "search-hit-active";
 
 /** Edit mode: select the exact match range in the textarea and scroll it into view. */
 export function selectRangeInTextarea(textarea: HTMLTextAreaElement, start: number, end: number): void {
@@ -36,8 +38,9 @@ function isInsideHighlight(node: Node, container: HTMLElement): boolean {
 
 /**
  * View mode: wrap every case-insensitive occurrence of `query` in `container`'s
- * text nodes with a highlight `<mark>`, then scroll to the occurrence nearest
- * `nearestIndex` (clamped into range). Returns the number highlighted.
+ * text nodes with a highlight `<mark>`, then mark the occurrence nearest
+ * `nearestIndex` (clamped into range) as active and scroll it into view. Returns
+ * the number highlighted.
  *
  * Re-running is safe: nodes already inside a highlight are skipped, so a second
  * call doesn't double-wrap.
@@ -76,6 +79,8 @@ export function highlightMatchesInView(container: HTMLElement, query: string, ne
   if (marks.length > 0) {
     const i = Math.min(Math.max(nearestIndex, 0), marks.length - 1);
     const target = marks[i];
+    // Set the clicked occurrence apart from the rest (accent vs. muted fill).
+    target.classList.add(ACTIVE_CLASS);
     // Guard: scrollIntoView isn't implemented in jsdom (unit tests).
     if (typeof target.scrollIntoView === "function") {
       target.scrollIntoView({ block: "center" });

@@ -123,12 +123,17 @@
     max-width: 100%;
   }
 
-  /* Jump-to-match highlight from a search result. Accent fill with the page bg as
-     text keeps it legible in both light and dark themes. */
+  /* Jump-to-match highlights from a search result. Other occurrences get a muted
+     grey fill; the clicked occurrence keeps the accent so it stands out. The page
+     bg as text keeps both legible in light and dark themes. */
   .markdown-body :global(mark.search-hit) {
-    background: var(--accent);
+    background: var(--text-muted);
     color: var(--bg);
     border-radius: 2px;
     padding: 0 1px;
+  }
+
+  .markdown-body :global(mark.search-hit-active) {
+    background: var(--accent);
   }
 </style>
