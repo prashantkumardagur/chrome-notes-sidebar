@@ -33,7 +33,7 @@ src/
       settings.ts              types, defaults, theme apply + view-mode resolution
     commands/panelToggle.ts    keyboard-command handler (toggles the side panel open/closed)
     search/
-      search.ts                pure case-insensitive body-only substring search (offsets + line snippets)
+      search.ts                pure body-only regex search (case toggle, offsets + line snippets, iteration guard)
       highlight.ts             jump-to-match: textarea select (edit) + rendered-DOM <mark>s (view)
       searchState.ts           search-UI session state type + normalize
       SessionSearchStateRepository.ts  chrome.storage.session store (restores search on panel reopen)
@@ -69,7 +69,7 @@ tests/                         Vitest, mirrors src/ (one spec per meaningful mod
 - `settings` → `{ theme, view }` (see `settings.ts`).
 
 `chrome.storage.session` (in-memory, per browser session):
-- `search:state` → `{ active, query, collapsed[] }` — the search page to restore on panel reopen.
+- `search:state` → `{ active, query, collapsed[], caseSensitive }` — the search page to restore on panel reopen.
 
 ## UI layout contract (don't drift)
 - **Top:** note selector (left) + View / Edit tabs (right).

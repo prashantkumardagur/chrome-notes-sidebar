@@ -12,9 +12,11 @@ export interface SearchState {
   query: string;
   /** Ids of notes whose result group was collapsed. */
   collapsed: string[];
+  /** Whether the regex case-sensitivity toggle was on. */
+  caseSensitive: boolean;
 }
 
-export const EMPTY_SEARCH_STATE: SearchState = { active: false, query: "", collapsed: [] };
+export const EMPTY_SEARCH_STATE: SearchState = { active: false, query: "", collapsed: [], caseSensitive: false };
 
 /** Coerce whatever was stored (possibly partial/corrupt) into a valid SearchState. */
 export function normalizeSearchState(raw: Partial<SearchState> | undefined): SearchState {
@@ -23,5 +25,7 @@ export function normalizeSearchState(raw: Partial<SearchState> | undefined): Sea
     active: raw.active === true,
     query: typeof raw.query === "string" ? raw.query : "",
     collapsed: Array.isArray(raw.collapsed) ? raw.collapsed.filter((id) => typeof id === "string") : [],
+    // Older records predate this field → default off.
+    caseSensitive: raw.caseSensitive === true,
   };
 }
