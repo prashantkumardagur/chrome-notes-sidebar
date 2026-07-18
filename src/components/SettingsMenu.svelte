@@ -3,18 +3,21 @@
 
   let {
     settings,
+    open,
+    onOpenChange,
     onChange,
     onExport,
     onImport,
   }: {
     settings: Settings;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
     onChange: (next: Settings) => void;
     onExport: () => Promise<{ filename: string; content: string }>;
     onImport: (raw: string) => Promise<number>;
   } = $props();
 
   let root: HTMLElement;
-  let open = $state(false);
   let fileInput: HTMLInputElement = $state()!;
   let importMessage = $state<string | null>(null);
 
@@ -78,10 +81,10 @@
   $effect(() => {
     if (!open) return;
     const onPointerDown = (e: PointerEvent) => {
-      if (root && !root.contains(e.target as Node)) open = false;
+      if (root && !root.contains(e.target as Node)) onOpenChange(false);
     };
     const onKeydown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') open = false;
+      if (e.key === 'Escape') onOpenChange(false);
     };
     document.addEventListener('pointerdown', onPointerDown);
     document.addEventListener('keydown', onKeydown);
@@ -96,7 +99,7 @@
   <button
     type="button"
     class="tool"
-    onclick={() => (open = !open)}
+    onclick={() => onOpenChange(!open)}
     aria-haspopup="dialog"
     aria-expanded={open}
     title="Settings"
