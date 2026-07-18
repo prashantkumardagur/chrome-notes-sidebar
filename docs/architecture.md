@@ -42,6 +42,7 @@ src/
     util/debounce.ts           trailing-edge debounce (autosave)
     util/time.ts               relative "last edited" formatting
     notes/title.ts             default/normalized note titles
+    notes/stats.ts             pure word/line count for the info popover
 tests/                         Vitest, mirrors src/ (one spec per meaningful module)
 ```
 
