@@ -38,7 +38,9 @@
 
   function pick(id: string) {
     open = false;
-    if (id !== currentId) onSelect(id);
+    // Always notify: selecting even the current note must leave search mode.
+    // selectNote() dedupes the actual note reload when the id is unchanged.
+    onSelect(id);
   }
 
   function create() {
@@ -141,17 +143,6 @@
       <button
         type="button"
         class="icon"
-        class:active={searchActive}
-        onclick={onSearch}
-        aria-pressed={searchActive}
-        title="Search notes"
-        aria-label="Search notes"
-      >
-        🔍
-      </button>
-      <button
-        type="button"
-        class="icon"
         onclick={startRename}
         disabled={!currentId}
         title="Rename note"
@@ -168,6 +159,17 @@
         aria-label="Delete note"
       >
         🗑
+      </button>
+      <button
+        type="button"
+        class="icon"
+        class:active={searchActive}
+        onclick={onSearch}
+        aria-pressed={searchActive}
+        title="Search notes"
+        aria-label="Search notes"
+      >
+        🔍
       </button>
     {/if}
   </div>

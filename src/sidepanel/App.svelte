@@ -32,6 +32,8 @@
   let searching = $state(false);
   // Snapshot of every full note taken when search opens (list() only has metas).
   let searchNotesData = $state<Note[]>([]);
+  // Kept across leaving/re-entering search so the query survives opening a result.
+  let searchQuery = $state('');
 
   // Keep the document theme in sync with the preference.
   $effect(() => applyTheme(settings.theme));
@@ -88,6 +90,8 @@
   }
 
   async function selectNote(id: string) {
+    // Search is its own page: picking a note (from the selector or a result) leaves it.
+    closeSearch();
     if (id === current?.id) return;
     await commitPending();
     await loadNote(id);
@@ -115,10 +119,10 @@
     else void openSearch();
   }
 
-  // Opening a result leaves search and switches to that note (view mode per preference).
-  // `match` is ignored here; it's the seam the highlighter follow-up builds on.
+  // Opening a result switches to that note (selectNote leaves search + applies the
+  // view preference). `match` is ignored here; it's the seam the highlighter builds on.
+  // The query is preserved so returning to search restores the last results.
   async function openSearchResult(noteId: string, _match: NoteMatch) {
-    closeSearch();
     await selectNote(noteId);
   }
 
@@ -247,7 +251,12 @@
 
   <main class="content">
     {#if searching}
-      <SearchPanel notes={searchNotesData} onOpen={openSearchResult} onClose={closeSearch} />
+      <SearchPanel
+        notes={searchNotesData}
+        bind:query={searchQuery}
+        onOpen={openSearchResult}
+        onClose={closeSearch}
+      />
     {:else if mode === 'edit'}
       <MarkdownEditor bind:value={body} oninput={onEdit} maxlength={MAX_NOTE_CHARS} />
     {:else}

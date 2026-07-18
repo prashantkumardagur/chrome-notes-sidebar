@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import {
     MAX_OCCURRENCES_PER_NOTE,
     MIN_QUERY_LENGTH,
@@ -13,17 +14,22 @@
 
   let {
     notes,
+    query = $bindable(''),
     onOpen,
     onClose,
   }: {
     notes: Note[];
+    // Bindable so the query survives leaving/re-entering search mode (owned by App).
+    query: string;
     onOpen: (noteId: string, match: NoteMatch) => void;
     onClose: () => void;
   } = $props();
 
-  let query = $state('');
   // `applied` trails `query` by the debounce so results don't recompute on every keystroke.
-  let applied = $state('');
+  let applied = $state(query);
+  let input: HTMLInputElement;
+  // Note ids whose result group is collapsed (local to this open; resets on reopen).
+  let collapsed = $state<Set<string>>(new Set());
 
   const applyQuery = debounce(() => {
     applied = query;
@@ -40,6 +46,20 @@
     }
   }
 
+  function toggleGroup(id: string) {
+    const next = new Set(collapsed);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    collapsed = next;
+  }
+
+  onMount(() => {
+    // Focus explicitly (not the `autofocus` attribute) so opening via the toolbar
+    // click focuses the input too, and a restored query lands ready to edit.
+    input?.focus();
+    input?.select();
+  });
+
   // Flush any pending recompute when unmounting so nothing fires after close.
   $effect(() => () => applyQuery.cancel());
 
@@ -50,15 +70,14 @@
 <div class="search">
   <div class="bar">
     <span class="glyph" aria-hidden="true">🔍</span>
-    <!-- svelte-ignore a11y_autofocus -->
     <input
       class="input"
       type="text"
       placeholder="Search all notes…"
+      bind:this={input}
       bind:value={query}
       oninput={onInput}
       onkeydown={onKeydown}
-      autofocus
       aria-label="Search notes"
     />
     <button type="button" class="close" onclick={onClose} title="Close search" aria-label="Close search">
@@ -73,21 +92,34 @@
       <p class="hint">No matches.</p>
     {:else}
       {#each results as result (result.id)}
+        {@const isCollapsed = collapsed.has(result.id)}
         <section class="group">
-          <h2 class="group-title" title={result.title}>{result.title}</h2>
-          {#each result.matches as match (match.start)}
-            <button type="button" class="row" onclick={() => onOpen(result.id, match)}>
-              <!-- Snippet is *raw* untrusted note text: slice around the match and put
-                   the emphasis in its own element — never {@html}. -->
-              <span class="snippet"
-                >{match.snippet.slice(0, match.matchStart)}<mark
-                  >{match.snippet.slice(match.matchStart, match.matchEnd)}</mark
-                >{match.snippet.slice(match.matchEnd)}</span
-              >
-            </button>
-          {/each}
-          {#if result.totalMatches > MAX_OCCURRENCES_PER_NOTE}
-            <p class="more">showing first {MAX_OCCURRENCES_PER_NOTE}/{result.totalMatches} in this note</p>
+          <button
+            type="button"
+            class="group-title"
+            onclick={() => toggleGroup(result.id)}
+            aria-expanded={!isCollapsed}
+            title={result.title}
+          >
+            <span class="caret" class:collapsed={isCollapsed} aria-hidden="true">▾</span>
+            <span class="group-name">{result.title}</span>
+            <span class="group-count">{result.totalMatches}</span>
+          </button>
+          {#if !isCollapsed}
+            {#each result.matches as match (match.start)}
+              <button type="button" class="row" onclick={() => onOpen(result.id, match)}>
+                <!-- Snippet is *raw* untrusted note text: slice around the match and put
+                     the emphasis in its own element — never {@html}. -->
+                <span class="snippet"
+                  >{match.snippet.slice(0, match.matchStart)}<mark
+                    >{match.snippet.slice(match.matchStart, match.matchEnd)}</mark
+                  >{match.snippet.slice(match.matchEnd)}</span
+                >
+              </button>
+            {/each}
+            {#if result.totalMatches > MAX_OCCURRENCES_PER_NOTE}
+              <p class="more">showing first {MAX_OCCURRENCES_PER_NOTE}/{result.totalMatches} in this note</p>
+            {/if}
           {/if}
         </section>
       {/each}
@@ -162,20 +194,59 @@
   }
 
   .group {
-    margin-bottom: 4px;
+    padding-bottom: 4px;
+  }
+
+  /* Dim separator between note groups (not above the first). */
+  .group + .group {
+    border-top: 1px solid var(--border);
   }
 
   .group-title {
-    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    appearance: none;
+    border: none;
+    background: transparent;
+    text-align: left;
     padding: 8px 12px 2px;
+    font: inherit;
     font-size: 11px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--text-muted);
+    cursor: pointer;
+  }
+
+  .group-title:hover {
+    color: var(--text);
+  }
+
+  .caret {
+    flex: none;
+    font-size: 10px;
+    transition: transform 0.12s ease;
+  }
+
+  .caret.collapsed {
+    transform: rotate(-90deg);
+  }
+
+  .group-name {
+    flex: 1;
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .group-count {
+    flex: none;
+    font-weight: 500;
+    opacity: 0.8;
   }
 
   .row {
