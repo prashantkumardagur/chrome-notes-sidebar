@@ -20,6 +20,7 @@ src/
     CharCounter.svelte      used/limit counter, warns near cap
     UtilityBar.svelte       bottom-left tools: copy-all + info popover
     SettingsMenu.svelte     bottom-left gear: theme + view-on-switch prefs + backup export/import
+    SearchPanel.svelte      search mode: input + grouped/emphasized results (replaces the editor area)
   lib/
     backup/backup.ts          build/serialize/parse a full notes+settings JSON backup
     storage/
@@ -31,6 +32,7 @@ src/
       SyncSettingsRepository.ts chrome.storage.sync implementation
       settings.ts              types, defaults, theme apply + view-mode resolution
     commands/panelToggle.ts    keyboard-command handler (toggles the side panel open/closed)
+    search/search.ts           pure case-insensitive body-only substring search (offsets + snippets)
     markdown/render.ts         GFM -> sanitized HTML
     util/debounce.ts           trailing-edge debounce (autosave)
     util/time.ts               relative "last edited" formatting

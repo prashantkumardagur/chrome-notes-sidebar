@@ -9,6 +9,8 @@
     onCreate,
     onRename,
     onDelete,
+    onSearch,
+    searchActive = false,
   }: {
     notes: NoteMeta[];
     currentId: string | null;
@@ -17,6 +19,8 @@
     onCreate: () => void;
     onRename: (id: string, title: string) => void;
     onDelete: (id: string) => void;
+    onSearch: () => void;
+    searchActive?: boolean;
   } = $props();
 
   let root: HTMLElement;
@@ -133,6 +137,17 @@
       >
         <span class="name">{currentTitle || 'Notes'}</span>
         <span class="caret" class:up={open} aria-hidden="true">▾</span>
+      </button>
+      <button
+        type="button"
+        class="icon"
+        class:active={searchActive}
+        onclick={onSearch}
+        aria-pressed={searchActive}
+        title="Search notes"
+        aria-label="Search notes"
+      >
+        🔍
       </button>
       <button
         type="button"
@@ -275,6 +290,12 @@
   .icon:hover:not(:disabled) {
     background: var(--bg-subtle);
     color: var(--text);
+  }
+
+  /* Search toggle reads as pressed while search mode is on. */
+  .icon.active {
+    background: var(--bg-subtle);
+    color: var(--accent);
   }
 
   .icon:last-child {

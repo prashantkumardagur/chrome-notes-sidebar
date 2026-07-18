@@ -4,11 +4,13 @@
   import MarkdownEditor from '../components/MarkdownEditor.svelte';
   import MarkdownView from '../components/MarkdownView.svelte';
   import NoteSelector from '../components/NoteSelector.svelte';
+  import SearchPanel from '../components/SearchPanel.svelte';
   import SettingsMenu from '../components/SettingsMenu.svelte';
   import UtilityBar from '../components/UtilityBar.svelte';
   import ViewEditTabs from '../components/ViewEditTabs.svelte';
   import { backupFileName, buildBackup, parseBackup, serializeBackup } from '../lib/backup/backup';
   import { nextUntitledTitle, normalizeTitle } from '../lib/notes/title';
+  import type { NoteMatch } from '../lib/search/search';
   import { applyTheme, DEFAULT_SETTINGS, resolveViewMode, type Settings } from '../lib/settings/settings';
   import { SyncSettingsRepository } from '../lib/settings/SyncSettingsRepository';
   import type { Note, NoteMeta } from '../lib/storage/NotesRepository';
@@ -27,6 +29,9 @@
   let mode = $state<'edit' | 'view'>('edit');
   let status = $state<'saved' | 'saving' | 'error'>('saved');
   let settings = $state<Settings>(DEFAULT_SETTINGS);
+  let searching = $state(false);
+  // Snapshot of every full note taken when search opens (list() only has metas).
+  let searchNotesData = $state<Note[]>([]);
 
   // Keep the document theme in sync with the preference.
   $effect(() => applyTheme(settings.theme));
@@ -88,6 +93,33 @@
     await loadNote(id);
     // The view preference decides the mode on note change ('persistent' keeps it).
     mode = resolveViewMode(settings.view, mode);
+  }
+
+  /** Enter search mode: flush pending edits, then snapshot every full note body. */
+  async function openSearch() {
+    // Flush any pending autosave so the snapshot reflects the latest text (incl. unsaved edits).
+    await commitPending();
+    const metas = await repo.list();
+    searchNotesData = (await Promise.all(metas.map((m) => repo.get(m.id)))).filter(
+      (n): n is Note => n !== null,
+    );
+    searching = true;
+  }
+
+  function closeSearch() {
+    searching = false;
+  }
+
+  function toggleSearch() {
+    if (searching) closeSearch();
+    else void openSearch();
+  }
+
+  // Opening a result leaves search and switches to that note (view mode per preference).
+  // `match` is ignored here; it's the seam the highlighter follow-up builds on.
+  async function openSearchResult(noteId: string, _match: NoteMatch) {
+    closeSearch();
+    await selectNote(noteId);
   }
 
   async function createNote() {
@@ -166,6 +198,19 @@
     status = 'saved';
   });
 
+  // Cmd/Ctrl+`/` toggles search. This listener lives in the panel document, so it
+  // only fires when the side panel has focus — exactly the "only in our sidebar" scope.
+  $effect(() => {
+    const onKeydown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
+        e.preventDefault();
+        toggleSearch();
+      }
+    };
+    window.addEventListener('keydown', onKeydown);
+    return () => window.removeEventListener('keydown', onKeydown);
+  });
+
   // Flush a pending autosave if the panel is being hidden/closed.
   $effect(() => {
     const flushIfHidden = () => {
@@ -194,12 +239,16 @@
       onCreate={createNote}
       onRename={renameNote}
       onDelete={deleteNote}
+      onSearch={toggleSearch}
+      searchActive={searching}
     />
     <ViewEditTabs bind:mode />
   </header>
 
   <main class="content">
-    {#if mode === 'edit'}
+    {#if searching}
+      <SearchPanel notes={searchNotesData} onOpen={openSearchResult} onClose={closeSearch} />
+    {:else if mode === 'edit'}
       <MarkdownEditor bind:value={body} oninput={onEdit} maxlength={MAX_NOTE_CHARS} />
     {:else}
       <MarkdownView source={body} />

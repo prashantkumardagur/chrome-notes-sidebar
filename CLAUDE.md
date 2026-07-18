@@ -30,7 +30,7 @@ Follow this on **every** change request — it is not optional:
 
 Every change — however small — runs through this cycle, in order:
 
-1. **Plan.** Think through the best solution and outline the changes *before* writing code.
+1. **Plan.** Think through the best solution based on the task and outline the changes *before* writing code.
    Prefer reusing existing utilities/seams over adding new ones.
 2. **Implement.** Make the changes.
 3. **Test.** Add or extend unit tests for the new/changed logic.
@@ -69,13 +69,13 @@ Then follow the Branching & PR workflow above (commit → PR → share link).
 
 What the repo is, how it's structured, the roadmap, and why decisions were made live in
 [`docs/`](./docs/): [overview](./docs/overview.md) · [architecture](./docs/architecture.md)
-(structure, seams, the UI layout contract) · [roadmap](./docs/roadmap.md) ·
+(structure, seams, the UI layout contract) · [roadmap](./docs/roadmap/index.md) ·
 [decisions](./docs/decisions.md). Keep those updated when scope or structure changes.
 
 ## Golden rules
 
 1. **Small, PR-sized changes.** Each change is its own small PR — don't bundle unrelated work. Pick
-   the next item from [`docs/roadmap.md`](./docs/roadmap.md) (the first item is the default) unless
+   the next item from [`docs/roadmap/index.md`](./docs/roadmap/index.md) (the first item is the default) unless
    the user's request points elsewhere.
 2. **Every meaningful function is unit-tested.** Tests live in `tests/` (mirroring `src/`), run
    with Vitest. A PR is not done until `npm test` is green and new logic is covered. Pure logic is
