@@ -1,23 +1,22 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import type { Settings, ThemePref, ViewPref } from '../lib/settings/settings';
 
   let {
     settings,
-    open,
-    onOpenChange,
     onChange,
     onExport,
     onImport,
+    onClose,
   }: {
     settings: Settings;
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
     onChange: (next: Settings) => void;
     onExport: () => Promise<{ filename: string; content: string }>;
     onImport: (raw: string) => Promise<number>;
+    onClose: () => void;
   } = $props();
 
-  let root: HTMLElement;
+  let closeButton: HTMLButtonElement = $state()!;
   let fileInput: HTMLInputElement = $state()!;
   let importMessage = $state<string | null>(null);
 
@@ -77,144 +76,142 @@
     }
   }
 
-  // Close the popover on an outside click or Escape (mirrors UtilityBar).
+  onMount(() => {
+    // Move focus into the page on open (mirrors SearchPanel focusing its input),
+    // so keyboard users land somewhere useful instead of on the editor that just unmounted.
+    closeButton?.focus();
+  });
+
+  // Escape closes the page regardless of which control inside it has focus (unlike
+  // SearchPanel's single input, focus here can land on any of several buttons), so the
+  // listener is document-level and lives only while this page is mounted.
   $effect(() => {
-    if (!open) return;
-    const onPointerDown = (e: PointerEvent) => {
-      if (root && !root.contains(e.target as Node)) onOpenChange(false);
+    const onDocumentKeydown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
     };
-    const onKeydown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onOpenChange(false);
-    };
-    document.addEventListener('pointerdown', onPointerDown);
-    document.addEventListener('keydown', onKeydown);
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown);
-      document.removeEventListener('keydown', onKeydown);
-    };
+    document.addEventListener('keydown', onDocumentKeydown);
+    return () => document.removeEventListener('keydown', onDocumentKeydown);
   });
 </script>
 
-<div class="settings" bind:this={root}>
-  <button
-    type="button"
-    class="tool"
-    onclick={() => onOpenChange(!open)}
-    aria-haspopup="dialog"
-    aria-expanded={open}
-    title="Settings"
-    aria-label="Settings"
-  >
-    <span class="glyph" aria-hidden="true">⚙</span>
-  </button>
+<div class="settings-page">
+  <div class="header">
+    <h2 class="title">Settings</h2>
+    <button
+      type="button"
+      class="close"
+      bind:this={closeButton}
+      onclick={onClose}
+      title="Close settings"
+      aria-label="Close settings"
+    >
+      ✕
+    </button>
+  </div>
 
-  {#if open}
-    <div class="popover" role="dialog" aria-label="Settings">
-      <fieldset>
-        <legend>Theme</legend>
-        <div class="segmented">
-          {#each THEME_OPTIONS as opt (opt.value)}
-            <button
-              type="button"
-              class:active={settings.theme === opt.value}
-              aria-pressed={settings.theme === opt.value}
-              onclick={() => setTheme(opt.value)}
-            >
-              {opt.label}
-            </button>
-          {/each}
-        </div>
-      </fieldset>
+  <div class="body">
+    <fieldset>
+      <legend>Theme</legend>
+      <div class="segmented">
+        {#each THEME_OPTIONS as opt (opt.value)}
+          <button
+            type="button"
+            class:active={settings.theme === opt.value}
+            aria-pressed={settings.theme === opt.value}
+            onclick={() => setTheme(opt.value)}
+          >
+            {opt.label}
+          </button>
+        {/each}
+      </div>
+    </fieldset>
 
-      <fieldset>
-        <legend>View on note switch</legend>
-        <div class="segmented">
-          {#each VIEW_OPTIONS as opt (opt.value)}
-            <button
-              type="button"
-              class:active={settings.view === opt.value}
-              aria-pressed={settings.view === opt.value}
-              onclick={() => setView(opt.value)}
-            >
-              {opt.label}
-            </button>
-          {/each}
-        </div>
-      </fieldset>
+    <fieldset>
+      <legend>View on note switch</legend>
+      <div class="segmented">
+        {#each VIEW_OPTIONS as opt (opt.value)}
+          <button
+            type="button"
+            class:active={settings.view === opt.value}
+            aria-pressed={settings.view === opt.value}
+            onclick={() => setView(opt.value)}
+          >
+            {opt.label}
+          </button>
+        {/each}
+      </div>
+    </fieldset>
 
-      <fieldset>
-        <legend>Backup</legend>
-        <div class="backup-actions">
-          <button type="button" onclick={handleExport}>Export</button>
-          <button type="button" onclick={triggerImport}>Import</button>
-        </div>
-        {#if importMessage}
-          <p class="backup-message" role="status" aria-live="polite">{importMessage}</p>
-        {/if}
-        <input
-          bind:this={fileInput}
-          type="file"
-          accept="application/json,.json"
-          class="visually-hidden"
-          onchange={handleFileSelected}
-        />
-      </fieldset>
-    </div>
-  {/if}
+    <fieldset>
+      <legend>Backup</legend>
+      <div class="backup-actions">
+        <button type="button" onclick={handleExport}>Export</button>
+        <button type="button" onclick={triggerImport}>Import</button>
+      </div>
+      {#if importMessage}
+        <p class="backup-message" role="status" aria-live="polite">{importMessage}</p>
+      {/if}
+      <input
+        bind:this={fileInput}
+        type="file"
+        accept="application/json,.json"
+        class="visually-hidden"
+        onchange={handleFileSelected}
+      />
+    </fieldset>
+  </div>
 </div>
 
 <style>
-  .settings {
-    position: relative;
-    display: inline-flex;
+  .settings-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
   }
 
-  /* Standalone button, styled to match UtilityBar's tools but not part of its group.
-     The gear glyph renders small and low on the baseline, so bump its size and
-     center it with flex; the trimmed vertical padding keeps the box height equal
-     to the neighbouring copy/info buttons. */
-  .tool {
-    display: inline-flex;
+  .header {
+    display: flex;
     align-items: center;
-    justify-content: center;
-    appearance: none;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--bg);
-    color: var(--text-muted);
-    font: inherit;
-    font-size: 15px;
-    line-height: 1;
-    padding: 4px 9px;
-    cursor: pointer;
-  }
-
-  /* The gear glyph's visual center sits below its font box; nudge it up so it
-     reads as vertically centered within the button. */
-  .glyph {
-    display: block;
-    transform: translateY(-1px);
-  }
-
-  .tool:hover {
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
     background: var(--bg-subtle);
+  }
+
+  .title {
+    margin: 0;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .close {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1;
+    padding: 4px 6px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+
+  .close:hover {
+    background: var(--bg);
     color: var(--text);
   }
 
-  .popover {
-    position: absolute;
-    bottom: calc(100% + 6px);
-    left: 0;
-    z-index: 20;
-    min-width: 200px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
-    padding: 10px;
+  .body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 20px;
   }
 
   fieldset {
@@ -248,7 +245,7 @@
     font: inherit;
     font-size: 12px;
     font-weight: 600;
-    padding: 4px 8px;
+    padding: 6px 8px;
     border-radius: 6px;
     cursor: pointer;
   }
@@ -274,7 +271,7 @@
     font: inherit;
     font-size: 12px;
     font-weight: 600;
-    padding: 5px 8px;
+    padding: 6px 8px;
     cursor: pointer;
   }
 

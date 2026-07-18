@@ -19,7 +19,8 @@ src/
     MarkdownView.svelte     renders sanitized GFM
     CharCounter.svelte      used/limit counter, warns near cap
     UtilityBar.svelte       bottom-left tools: copy-all + info popover
-    SettingsMenu.svelte     bottom-left gear: theme + view-on-switch prefs + backup export/import
+    SettingsPanel.svelte    settings page: theme + view-on-switch prefs + backup export/import
+                            (opened via the footer gear; replaces the editor area, like search)
     SearchPanel.svelte      search mode: input + grouped/emphasized results (replaces the editor area)
   lib/
     backup/backup.ts          build/serialize/parse a full notes+settings JSON backup
@@ -73,6 +74,8 @@ tests/                         Vitest, mirrors src/ (one spec per meaningful mod
 
 ## UI layout contract (don't drift)
 - **Top:** note selector (left) + View / Edit tabs (right).
-- **Middle:** Markdown textarea (Edit) or rendered GFM (View).
-- **Bottom-left:** tools (copy-all, info popover) + a standalone settings gear.
+- **Middle:** Markdown textarea (Edit) or rendered GFM (View) — or, while a transient surface is
+  active, that surface's full-page content (search results, settings) replacing the editor/view.
+- **Bottom-left:** tools (copy-all, info popover) + a standalone settings gear (toggles the
+  settings page; footer/topbar stay visible while it's open).
 - **Bottom-right:** save-state dot + character counter (`used/limit`).
