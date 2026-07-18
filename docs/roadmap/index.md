@@ -5,9 +5,9 @@ lists only **upcoming** and **deferred** work. Each item is one small PR.
 
 ## Next Tasks
 
-- [Search result highlighting](./highlighter.md) — jump to + highlight the match (PR 2, depends on Search)
-- Clicking on search should collapse the note selector
-- Remember the last opened note
+1. [Search result highlighting](./highlighter.md) — jump to + highlight the match (PR 3, depends on Search)
+2. [One transient surface open at a time](./single-open-popover.md) — opening any popover/search closes the others (started from "clicking search should collapse the note selector")
+3. [Remember the last opened note](./last-opened-note.md) — reopen the panel on the note you last had open
 
 ## Done
 
