@@ -1,13 +1,21 @@
 /**
  * Pure, in-memory cross-note search.
  *
- * The dataset is tiny (≤10 notes × ≤7500 chars), so this is an exhaustive,
- * case-insensitive plain-substring scan over note *bodies* — no index, no
- * ranking, no storage. Titles are used only as group labels, never matched.
+ * The dataset is tiny (≤10 notes × ≤7500 chars), so this is an exhaustive scan
+ * over note *bodies* — no index, no ranking, no storage. Titles are used only as
+ * group labels, never matched.
  *
- * Offsets (`start`/`end`) are returned even though phase 1 doesn't highlight,
- * because the follow-up highlighter task consumes exact body offsets — designing
- * the data model once here avoids reworking it later.
+ * The query is always compiled as a JavaScript `RegExp` (case-insensitive by
+ * default; `options.caseSensitive` drops the `i` flag). Plain text still works
+ * because a literal is a valid regex; queries with regex metacharacters match as
+ * patterns. Offsets (`start`/`end`) are returned so the follow-up highlighter can
+ * jump to the exact match.
+ *
+ * Runaway guard: {@link MAX_MATCH_ITERATIONS_PER_NOTE} bounds a degenerate
+ * many-match or zero-width pattern per note. It does NOT protect against
+ * catastrophic backtracking *inside a single* `exec()` (e.g. `(a+)+$`) — that
+ * hangs before any iteration completes. Accepted: a bad pattern only freezes the
+ * author's own panel until they edit it (single-user, local tool).
  */
 
 import type { Note } from "../storage/NotesRepository";
@@ -16,11 +24,17 @@ export const MIN_QUERY_LENGTH = 2;
 export const MAX_OCCURRENCES_PER_NOTE = 20;
 /** Chars of context kept on each side of a match when building its snippet. */
 export const SNIPPET_CONTEXT_CHARS = 40;
+/**
+ * Hard ceiling on match iterations per note — the runaway guard. Generous enough
+ * never to be hit in normal use (≤7500 chars/note); only stops degenerate
+ * many-match / zero-width loops.
+ */
+export const MAX_MATCH_ITERATIONS_PER_NOTE = 100_000;
 
 export interface NoteMatch {
   /** Offset in `note.body` where the match begins. */
   start: number;
-  /** `start + query.length` — offset just past the match in `note.body`. */
+  /** Offset just past the match in `note.body` (`start + match length`). */
   end: number;
   /** Single-line context window around the match (whitespace collapsed). */
   snippet: string;
@@ -34,8 +48,43 @@ export interface NoteSearchResult {
   title: string;
   /** Occurrences, ascending by `start`, capped to {@link MAX_OCCURRENCES_PER_NOTE}. */
   matches: NoteMatch[];
-  /** True occurrence count before the cap. */
+  /** True occurrence count before the cap (bounded by the iteration ceiling). */
   totalMatches: number;
+}
+
+export interface SearchOptions {
+  /** When true, match case-sensitively (drop the `i` flag). Default false. */
+  caseSensitive?: boolean;
+}
+
+/** Why a search produced no results, so the UI can render each case differently. */
+export type SearchError = "too-short" | "invalid-regex";
+
+export interface SearchOutcome {
+  results: NoteSearchResult[];
+  /** Non-null when the query couldn't run (too short / not a valid regex). */
+  error: SearchError | null;
+}
+
+export type CompileResult = { ok: true; regex: RegExp } | { ok: false; error: SearchError };
+
+/**
+ * Compile the (trimmed) query into a global scanning `RegExp`, or report why it
+ * can't run. The length check happens before construction so a too-short query
+ * never reaches the regex engine. The `g` flag is always set (the scan iterates
+ * via `lastIndex`); `i` is set unless `options.caseSensitive`.
+ */
+export function compileQuery(query: string, options: SearchOptions = {}): CompileResult {
+  const trimmed = query.trim();
+  if (trimmed.length < MIN_QUERY_LENGTH) return { ok: false, error: "too-short" };
+
+  const flags = options.caseSensitive ? "g" : "gi";
+  try {
+    return { ok: true, regex: new RegExp(trimmed, flags) };
+  } catch {
+    // Any SyntaxError from an unbalanced/invalid pattern surfaces as an error state.
+    return { ok: false, error: "invalid-regex" };
+  }
 }
 
 /** Collapse every run of whitespace (incl. newlines) to a single space. */
@@ -78,36 +127,45 @@ function buildSnippet(
 }
 
 /**
- * Case-insensitive, body-only substring search. Returns only notes with ≥1
- * match, in the order `notes` was given; occurrences within a note ascend by
- * `start`. Queries shorter than {@link MIN_QUERY_LENGTH} (after trimming) yield
- * an empty result.
+ * Regex-based, body-only search. Returns only notes with ≥1 match, in the order
+ * `notes` was given; occurrences within a note ascend by `start`. On a too-short
+ * or invalid query, `results` is empty and `error` says which.
  */
-export function searchNotes(query: string, notes: Note[]): NoteSearchResult[] {
-  const needle = query.trim().toLowerCase();
-  if (needle.length < MIN_QUERY_LENGTH) return [];
+export function searchNotes(query: string, notes: Note[], options: SearchOptions = {}): SearchOutcome {
+  const compiled = compileQuery(query, options);
+  if (!compiled.ok) return { results: [], error: compiled.error };
+  const { regex } = compiled;
 
   const results: NoteSearchResult[] = [];
   for (const note of notes) {
-    const haystack = note.body.toLowerCase();
+    // The regex is shared across notes and carries `lastIndex`; reset per note.
+    regex.lastIndex = 0;
     const matches: NoteMatch[] = [];
     let totalMatches = 0;
+    let iterations = 0;
 
-    let from = 0;
-    // Non-overlapping scan: advance past each hit (never by < 1) to avoid a loop.
-    for (let idx = haystack.indexOf(needle, from); idx !== -1; idx = haystack.indexOf(needle, from)) {
+    for (let m = regex.exec(note.body); m !== null; m = regex.exec(note.body)) {
+      // Runaway guard: bound total iterations (also caps degenerate zero-width loops).
+      if (++iterations > MAX_MATCH_ITERATIONS_PER_NOTE) break;
+
+      const start = m.index;
+      const end = m.index + m[0].length;
+      // Zero-width matches (^, \b, a*) are meaningless to show, and `exec` won't
+      // advance `lastIndex` past them — bump it by hand or the loop never ends.
+      if (end === start) {
+        regex.lastIndex = start + 1;
+        continue;
+      }
+
       totalMatches++;
-      const start = idx;
-      const end = idx + needle.length;
       if (matches.length < MAX_OCCURRENCES_PER_NOTE) {
         matches.push({ start, end, ...buildSnippet(note.body, start, end) });
       }
-      from = end > from ? end : from + 1;
     }
 
     if (totalMatches > 0) {
       results.push({ id: note.id, title: note.title, matches, totalMatches });
     }
   }
-  return results;
+  return { results, error: null };
 }

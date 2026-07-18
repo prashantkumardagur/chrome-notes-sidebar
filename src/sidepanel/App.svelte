@@ -42,6 +42,8 @@
   // returns to where they left: the query and which result groups were collapsed.
   let searchQuery = $state('');
   let searchCollapsed = $state<Set<string>>(new Set());
+  // Regex case-sensitivity toggle; persisted alongside query/collapsed.
+  let searchCaseSensitive = $state(false);
   // Guards the persist effect until the stored session state has been restored,
   // so we don't clobber it with defaults during startup.
   let searchHydrated = $state(false);
@@ -256,6 +258,7 @@
     const saved = await searchStateRepo.get();
     searchQuery = saved.query;
     searchCollapsed = new Set(saved.collapsed);
+    searchCaseSensitive = saved.caseSensitive;
     if (saved.active) await openSearch();
     // Only now let the persist effect run, so it can't overwrite the restore with defaults.
     searchHydrated = true;
@@ -274,7 +277,12 @@
   // Persist the search page state to session storage so it survives panel reopen.
   $effect(() => {
     // Read the tracked state up front so the effect subscribes even before hydration.
-    const snapshot = { active: searching, query: searchQuery, collapsed: [...searchCollapsed] };
+    const snapshot = {
+      active: searching,
+      query: searchQuery,
+      collapsed: [...searchCollapsed],
+      caseSensitive: searchCaseSensitive,
+    };
     if (!searchHydrated) return;
     void searchStateRepo.save(snapshot);
   });
@@ -334,6 +342,7 @@
         notes={searchNotesData}
         bind:query={searchQuery}
         bind:collapsed={searchCollapsed}
+        bind:caseSensitive={searchCaseSensitive}
         onOpen={openSearchResult}
         onClose={closeSearch}
       />

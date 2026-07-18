@@ -16,13 +16,15 @@
     notes,
     query = $bindable(''),
     collapsed = $bindable(new Set()),
+    caseSensitive = $bindable(false),
     onOpen,
     onClose,
   }: {
     notes: Note[];
-    // Bindable so query + collapsed groups survive leaving/re-entering search (owned by App).
+    // Bindable so query + collapsed groups + case toggle survive leaving/re-entering search (owned by App).
     query: string;
     collapsed: Set<string>;
+    caseSensitive: boolean;
     // `index` is the clicked occurrence's position within this note's `matches`,
     // used as the nearest-occurrence target when highlighting in View mode.
     onOpen: (noteId: string, match: NoteMatch, index: number) => void;
@@ -65,8 +67,11 @@
   // Flush any pending recompute when unmounting so nothing fires after close.
   $effect(() => () => applyQuery.cancel());
 
-  const results = $derived<NoteSearchResult[]>(searchNotes(applied, notes));
-  const tooShort = $derived(applied.trim().length < MIN_QUERY_LENGTH);
+  // Recomputes on query (debounced via `applied`), notes, AND the case toggle —
+  // flipping `caseSensitive` re-runs the search immediately (it changes the `i` flag).
+  const outcome = $derived(searchNotes(applied, notes, { caseSensitive }));
+  const results = $derived<NoteSearchResult[]>(outcome.results);
+  const searchError = $derived(outcome.error);
 </script>
 
 <div class="search">
@@ -75,21 +80,34 @@
     <input
       class="input"
       type="text"
-      placeholder="Search all notes…"
+      placeholder="Search all notes (regex)…"
       bind:this={input}
       bind:value={query}
       oninput={onInput}
       onkeydown={onKeydown}
       aria-label="Search notes"
     />
+    <button
+      type="button"
+      class="toggle"
+      class:active={caseSensitive}
+      aria-pressed={caseSensitive}
+      onclick={() => (caseSensitive = !caseSensitive)}
+      title="Match case"
+      aria-label="Match case"
+    >
+      Aa
+    </button>
     <button type="button" class="close" onclick={onClose} title="Close search" aria-label="Close search">
       ✕
     </button>
   </div>
 
   <div class="results">
-    {#if tooShort}
+    {#if searchError === 'too-short'}
       <p class="hint">Type at least {MIN_QUERY_LENGTH} characters to search.</p>
+    {:else if searchError === 'invalid-regex'}
+      <p class="hint error">Invalid regular expression.</p>
     {:else if results.length === 0}
       <p class="hint">No matches.</p>
     {:else}
@@ -163,6 +181,32 @@
     font-size: 13px;
   }
 
+  .toggle {
+    flex: none;
+    appearance: none;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 2px 5px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+
+  .toggle:hover {
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  /* Pressed: accent-tinted so "match case is on" reads at a glance. */
+  .toggle.active {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
   .close {
     appearance: none;
     border: none;
@@ -193,6 +237,11 @@
     color: var(--text-muted);
     font-size: 12px;
     text-align: center;
+  }
+
+  /* Invalid-regex feedback: distinct from the neutral "no matches" hint. */
+  .hint.error {
+    color: var(--danger, #d94040);
   }
 
   .group {

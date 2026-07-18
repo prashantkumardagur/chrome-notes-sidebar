@@ -11,9 +11,10 @@ ours**. Interaction model = Google Tasks, but for notes.
   emphasis, lists, links, code, tables, task lists).
 - **Autosave** to `chrome.storage.sync`, 3s debounced — cross-device, no account.
 - **Per-note character budget** with a live `used/limit` counter and a save-state dot (Saving / Saved).
-- **Cross-note search** (🔍 in the note actions, or Cmd/Ctrl+`/`): live, case-insensitive substring
-  search over every note's body, results grouped by note; click a result to open that note and jump
-  to the match (selected in Edit mode, highlighted + scrolled to in View mode).
+- **Cross-note search** (🔍 in the note actions, or Cmd/Ctrl+`/`): live regex search over every
+  note's body (case-insensitive by default, with an `Aa` match-case toggle), results grouped by note;
+  click a result to open that note and jump to the match (selected in Edit mode, highlighted +
+  scrolled to in View mode).
 - **Reopens on the last note** you had open (remembered in synced settings), falling back to the
   first note if that note no longer exists.
 

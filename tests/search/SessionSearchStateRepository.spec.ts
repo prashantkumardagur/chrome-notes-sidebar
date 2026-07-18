@@ -27,7 +27,7 @@ describe("SessionSearchStateRepository", () => {
 
   it("round-trips a saved state", async () => {
     const repo = new SessionSearchStateRepository(fakeArea().area);
-    const state = { active: true, query: "meeting", collapsed: ["n1"] };
+    const state = { active: true, query: "meeting", collapsed: ["n1"], caseSensitive: true };
     await repo.save(state);
     expect(await repo.get()).toEqual(state);
   });
@@ -41,7 +41,7 @@ describe("SessionSearchStateRepository", () => {
 
   it("clear() resets to the empty state", async () => {
     const repo = new SessionSearchStateRepository(fakeArea().area);
-    await repo.save({ active: true, query: "x", collapsed: ["a"] });
+    await repo.save({ active: true, query: "x", collapsed: ["a"], caseSensitive: false });
     await repo.clear();
     expect(await repo.get()).toEqual(EMPTY_SEARCH_STATE);
   });
