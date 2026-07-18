@@ -17,6 +17,7 @@
   import type { Note, NoteMeta } from '../lib/storage/NotesRepository';
   import { bodyFitsStorage, MAX_NOTE_CHARS, MAX_NOTES } from '../lib/storage/limits';
   import { SyncNotesRepository } from '../lib/storage/SyncNotesRepository';
+  import { nextSurface, type Surface } from '../lib/ui/surfaces';
   import { debounce } from '../lib/util/debounce';
 
   const AUTOSAVE_DELAY_MS = 3000;
@@ -31,7 +32,10 @@
   let mode = $state<'edit' | 'view'>('edit');
   let status = $state<'saved' | 'saving' | 'error'>('saved');
   let settings = $state<Settings>(DEFAULT_SETTINGS);
-  let searching = $state(false);
+  // Single source of truth for which transient surface (dropdown/settings/info/search)
+  // is open — only one at a time. See src/lib/ui/surfaces.ts.
+  let activeSurface = $state<Surface | null>(null);
+  const searching = $derived(activeSurface === 'search');
   // Snapshot of every full note taken when search opens (list() only has metas).
   let searchNotesData = $state<Note[]>([]);
   // Kept across leaving/re-entering search (and panel close/reopen) so the user
@@ -41,6 +45,9 @@
   // Guards the persist effect until the stored session state has been restored,
   // so we don't clobber it with defaults during startup.
   let searchHydrated = $state(false);
+  // Guards the last-note persist effect until the mount restore has run, so a
+  // note-change write can't clobber the stored cursor during startup.
+  let noteHydrated = $state(false);
   // Jump-to-match state set when a search result is opened, consumed by the editor
   // (native selection) or the view (rendered <mark>s). Exactly one is non-null at a
   // time — whichever matches the mode the note opened in — and both reset on any
@@ -59,6 +66,11 @@
   function saveSettings(next: Settings) {
     settings = next;
     void settingsRepo.save(next);
+  }
+
+  /** Coordinate the mutually-exclusive transient surfaces: opening one closes any other. */
+  function setSurface(id: Surface, open: boolean) {
+    activeSurface = nextSurface(activeSurface, id, open);
   }
 
   const scheduleSave = debounce(() => {
@@ -130,11 +142,12 @@
     searchNotesData = (await Promise.all(metas.map((m) => repo.get(m.id)))).filter(
       (n): n is Note => n !== null,
     );
-    searching = true;
+    // Flip to search only after the snapshot is populated, so the page never renders empty.
+    activeSurface = 'search';
   }
 
   function closeSearch() {
-    searching = false;
+    setSurface('search', false);
   }
 
   function toggleSearch() {
@@ -228,9 +241,15 @@
       current = note;
       body = note.body;
     } else {
-      await loadNote(notes[0].id);
+      // Reopen on the note the user last had open; fall back to notes[0] if the
+      // remembered id is missing (deleted, imported away, or never set).
+      const savedId = settings.lastNoteId;
+      const targetId = savedId && notes.some((n) => n.id === savedId) ? savedId : notes[0].id;
+      await loadNote(targetId);
     }
     status = 'saved';
+    // Let the last-note persist effect run now that the restore is done.
+    noteHydrated = true;
 
     // Restore where the user left off: their last query + collapsed groups, and
     // reopen search itself if that was the page they were on.
@@ -240,6 +259,16 @@
     if (saved.active) await openSearch();
     // Only now let the persist effect run, so it can't overwrite the restore with defaults.
     searchHydrated = true;
+  });
+
+  // Remember the current note as the cursor to restore on next panel open. Gated
+  // on hydration so the mount restore can't be clobbered, and skips redundant
+  // sync writes when the id is already stored.
+  $effect(() => {
+    const id = current?.id; // track it so the effect re-runs on note change
+    if (!noteHydrated || !id) return;
+    if (settings.lastNoteId === id) return;
+    saveSettings({ ...settings, lastNoteId: id });
   });
 
   // Persist the search page state to session storage so it survives panel reopen.
@@ -287,6 +316,8 @@
       {notes}
       currentId={current?.id ?? null}
       max={MAX_NOTES}
+      open={activeSurface === 'dropdown'}
+      onOpenChange={(o) => setSurface('dropdown', o)}
       onSelect={selectNote}
       onCreate={createNote}
       onRename={renameNote}
@@ -322,8 +353,17 @@
         charLimit={MAX_NOTE_CHARS}
         noteCount={notes.length}
         maxNotes={MAX_NOTES}
+        open={activeSurface === 'info'}
+        onOpenChange={(o) => setSurface('info', o)}
       />
-      <SettingsMenu {settings} onChange={saveSettings} onExport={exportBackup} onImport={importBackup} />
+      <SettingsMenu
+        {settings}
+        open={activeSurface === 'settings'}
+        onOpenChange={(o) => setSurface('settings', o)}
+        onChange={saveSettings}
+        onExport={exportBackup}
+        onImport={importBackup}
+      />
     </div>
     <div class="status" aria-live="polite">
       <span class="save" class:saved={isSaved}>{statusText}</span>

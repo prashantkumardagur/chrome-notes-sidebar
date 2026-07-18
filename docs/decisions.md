@@ -18,7 +18,7 @@ Key choices and the reasoning. Terse on purpose — code is the source of truth 
 |---|---|
 | **Svelte 5 + Vite 8 + CRXJS** | Small/fast UI; CRXJS handles MV3 manifest + HMR. |
 | **Repository seams** (`NotesRepository`, `SettingsRepository` — the only files touching `chrome.storage`) | Backend swap (local/cloud) becomes a one-file change per domain. |
-| **Settings in `storage.sync`** (`{theme, view}`); theme via `data-theme` on `:root` | Prefs follow the user across devices; a forced `data-theme` overrides `prefers-color-scheme`. |
+| **Settings in `storage.sync`** (`{theme, view, lastNoteId?}`); theme via `data-theme` on `:root` | Prefs follow the user across devices; a forced `data-theme` overrides `prefers-color-scheme`. `lastNoteId` is a device cursor (last opened note) that reuses the settings item — no new seam; a stale id falls back to `notes[0]`. |
 | **Keyboard shortcut** via `commands` + `onCommand`; `windowId` read off the event `tab` | `sidePanel.open` needs a user gesture — reading `windowId` synchronously (no `await`) keeps it. |
 | **Shortcut *toggles*** — panels hold a port to the worker (`PanelRegistry`); closing signals the panel to `window.close()` itself | Chrome has no `sidePanel.close()`, so open/closed state is tracked via live ports and the panel closes itself on request. |
 | **Biome**, recommended rules, 2-space / 120-width | One fast tool for lint + format; `.svelte` left to svelte-check. |

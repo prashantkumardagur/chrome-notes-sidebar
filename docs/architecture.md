@@ -38,6 +38,7 @@ src/
       searchState.ts           search-UI session state type + normalize
       SessionSearchStateRepository.ts  chrome.storage.session store (restores search on panel reopen)
     markdown/render.ts         GFM -> sanitized HTML
+    ui/surfaces.ts             single-active-surface coordination — which transient popover/search page is open
     util/debounce.ts           trailing-edge debounce (autosave)
     util/time.ts               relative "last edited" formatting
     notes/title.ts             default/normalized note titles

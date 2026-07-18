@@ -25,6 +25,29 @@ describe("normalizeSettings", () => {
       view: "persistent",
     });
   });
+
+  it("keeps a valid lastNoteId", () => {
+    expect(normalizeSettings({ theme: "dark", view: "view", lastNoteId: "abc" })).toEqual({
+      theme: "dark",
+      view: "view",
+      lastNoteId: "abc",
+    });
+  });
+
+  it("drops a non-string / empty lastNoteId (no key on the result)", () => {
+    for (const bad of [123, "", null, undefined, {}]) {
+      // biome-ignore lint/suspicious/noExplicitAny: exercising corrupt stored input
+      const result = normalizeSettings({ theme: "dark", view: "view", lastNoteId: bad as any });
+      expect("lastNoteId" in result).toBe(false);
+      expect(result).toEqual({ theme: "dark", view: "view" });
+    }
+  });
+
+  it("normalizes lastNoteId independently of corrupt theme/view", () => {
+    // biome-ignore lint/suspicious/noExplicitAny: partial/corrupt stored input
+    const raw = { theme: "solarized", view: "readonly", lastNoteId: "keep-me" } as any;
+    expect(normalizeSettings(raw)).toEqual({ ...DEFAULT_SETTINGS, lastNoteId: "keep-me" });
+  });
 });
 
 describe("resolveViewMode", () => {
