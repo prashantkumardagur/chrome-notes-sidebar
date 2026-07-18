@@ -6,6 +6,8 @@ lists only **upcoming** and **deferred** work. Each item is one small PR.
 ## Next Tasks
 
 - [Search result highlighting](./highlighter.md) — jump to + highlight the match (PR 2, depends on Search)
+- Clicking on search should collapse the note selector
+- Remember the last opened note
 
 ## Done
 
