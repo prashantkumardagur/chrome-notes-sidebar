@@ -11,6 +11,7 @@
   import { backupFileName, buildBackup, parseBackup, serializeBackup } from '../lib/backup/backup';
   import { nextUntitledTitle, normalizeTitle } from '../lib/notes/title';
   import type { NoteMatch } from '../lib/search/search';
+  import { SessionSearchStateRepository } from '../lib/search/SessionSearchStateRepository';
   import { applyTheme, DEFAULT_SETTINGS, resolveViewMode, type Settings } from '../lib/settings/settings';
   import { SyncSettingsRepository } from '../lib/settings/SyncSettingsRepository';
   import type { Note, NoteMeta } from '../lib/storage/NotesRepository';
@@ -21,6 +22,7 @@
   const AUTOSAVE_DELAY_MS = 3000;
   const repo = new SyncNotesRepository();
   const settingsRepo = new SyncSettingsRepository();
+  const searchStateRepo = new SessionSearchStateRepository();
   const version = chrome.runtime.getManifest().version;
 
   let notes = $state<NoteMeta[]>([]);
@@ -32,8 +34,13 @@
   let searching = $state(false);
   // Snapshot of every full note taken when search opens (list() only has metas).
   let searchNotesData = $state<Note[]>([]);
-  // Kept across leaving/re-entering search so the query survives opening a result.
+  // Kept across leaving/re-entering search (and panel close/reopen) so the user
+  // returns to where they left: the query and which result groups were collapsed.
   let searchQuery = $state('');
+  let searchCollapsed = $state<Set<string>>(new Set());
+  // Guards the persist effect until the stored session state has been restored,
+  // so we don't clobber it with defaults during startup.
+  let searchHydrated = $state(false);
 
   // Keep the document theme in sync with the preference.
   $effect(() => applyTheme(settings.theme));
@@ -200,6 +207,23 @@
       await loadNote(notes[0].id);
     }
     status = 'saved';
+
+    // Restore where the user left off: their last query + collapsed groups, and
+    // reopen search itself if that was the page they were on.
+    const saved = await searchStateRepo.get();
+    searchQuery = saved.query;
+    searchCollapsed = new Set(saved.collapsed);
+    if (saved.active) await openSearch();
+    // Only now let the persist effect run, so it can't overwrite the restore with defaults.
+    searchHydrated = true;
+  });
+
+  // Persist the search page state to session storage so it survives panel reopen.
+  $effect(() => {
+    // Read the tracked state up front so the effect subscribes even before hydration.
+    const snapshot = { active: searching, query: searchQuery, collapsed: [...searchCollapsed] };
+    if (!searchHydrated) return;
+    void searchStateRepo.save(snapshot);
   });
 
   // Cmd/Ctrl+`/` toggles search. This listener lives in the panel document, so it
@@ -254,6 +278,7 @@
       <SearchPanel
         notes={searchNotesData}
         bind:query={searchQuery}
+        bind:collapsed={searchCollapsed}
         onOpen={openSearchResult}
         onClose={closeSearch}
       />

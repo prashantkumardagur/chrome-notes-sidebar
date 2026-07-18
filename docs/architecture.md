@@ -32,7 +32,10 @@ src/
       SyncSettingsRepository.ts chrome.storage.sync implementation
       settings.ts              types, defaults, theme apply + view-mode resolution
     commands/panelToggle.ts    keyboard-command handler (toggles the side panel open/closed)
-    search/search.ts           pure case-insensitive body-only substring search (offsets + snippets)
+    search/
+      search.ts                pure case-insensitive body-only substring search (offsets + line snippets)
+      searchState.ts           search-UI session state type + normalize
+      SessionSearchStateRepository.ts  chrome.storage.session store (restores search on panel reopen)
     markdown/render.ts         GFM -> sanitized HTML
     util/debounce.ts           trailing-edge debounce (autosave)
     util/time.ts               relative "last edited" formatting
@@ -41,9 +44,12 @@ tests/                         Vitest, mirrors src/ (one spec per meaningful mod
 ```
 
 ## Seams to respect
-- **Persistence only via a repository.** `SyncNotesRepository` (notes) and
-  `SyncSettingsRepository` (settings) are the *only* files that touch `chrome.storage.*` —
-  swapping/adding a backend is a one-file change per domain.
+- **Persistence only via a repository.** `SyncNotesRepository` (notes),
+  `SyncSettingsRepository` (settings), and `SessionSearchStateRepository` (ephemeral search-UI
+  state) are the *only* files that touch `chrome.storage.*` — one storage-owning file per domain.
+  The first two use the synced area (cross-device, durable); the search-state store uses the
+  **session** area on purpose: it restores "where you left off" on panel reopen but must not sync
+  across devices or outlive the browser session.
 - **All caps/limits live in `limits.ts`** (note count, per-note byte + character budgets).
 - **Markdown is always sanitized** in `render.ts` (DOMPurify); note content is untrusted.
 - **Backup import is a full replace**, not a merge: `NotesRepository.replaceAll` swaps the entire
@@ -54,10 +60,14 @@ tests/                         Vitest, mirrors src/ (one spec per meaningful mod
   large backup over an already-large store can transiently exceed the ~100 KB sync total and fail —
   safely, leaving existing notes intact (data loss is the worse failure, hence the ordering).
 
-## Storage layout (`chrome.storage.sync`)
+## Storage layout
+`chrome.storage.sync` (durable, cross-device):
 - `notes:index` → ordered `NoteMeta[]` (`{id, title, updatedAt}`).
 - `note:<id>` → one full `Note` per note.
 - `settings` → `{ theme, view }` (see `settings.ts`).
+
+`chrome.storage.session` (in-memory, per browser session):
+- `search:state` → `{ active, query, collapsed[] }` — the search page to restore on panel reopen.
 
 ## UI layout contract (don't drift)
 - **Top:** note selector (left) + View / Edit tabs (right).

@@ -73,17 +73,40 @@ describe("searchNotes", () => {
     expect(r.totalMatches).toBe(total);
   });
 
-  it("truncates long bodies, collapses whitespace, and adds ellipses only when cut", () => {
-    const long = `${"a".repeat(100)}\n\n  NEEDLE  \t${"b".repeat(100)}`;
-    const [r] = searchNotes("needle", [note("1", "A", long)]);
+  it("truncates long lines, collapses whitespace, and adds ellipses only when cut", () => {
+    // NEEDLE sits mid-line with lots of same-line text on both sides.
+    const line = `${"x".repeat(60)}  NEEDLE \t${"y".repeat(60)}`;
+    const [r] = searchNotes("needle", [note("1", "A", `heading\n${line}\nfooter`)]);
     const m = r.matches[0];
     // No raw newlines/tabs survive; runs collapsed to single spaces.
     expect(m.snippet).not.toMatch(/[\n\t]/);
     expect(m.snippet).not.toMatch(/ {2,}/);
-    // Cut on both sides → leading and trailing ellipsis.
+    // Cut on both sides within the line → leading and trailing ellipsis.
     expect(m.snippet.startsWith("…")).toBe(true);
     expect(m.snippet.endsWith("…")).toBe(true);
     expect(m.snippet.slice(m.matchStart, m.matchEnd)).toBe("NEEDLE");
+  });
+
+  it("clamps the snippet to the match's own line (no other lines leak in)", () => {
+    const body = "alpha line above\nbeta target gamma\ndelta line below";
+    const [r] = searchNotes("target", [note("1", "A", body)]);
+    const m = r.matches[0];
+    // Whole line is short → shown verbatim, no ellipsis, and nothing from siblings.
+    expect(m.snippet).toBe("beta target gamma");
+    expect(m.snippet).not.toContain("alpha");
+    expect(m.snippet).not.toContain("delta");
+    expect(m.snippet.slice(m.matchStart, m.matchEnd)).toBe("target");
+  });
+
+  it("does not add a leading ellipsis when the match starts its line", () => {
+    // Match near the start of a non-first line: no leading ellipsis (natural line edge).
+    const body = `prior line\ntarget then a fairly long tail ${"z".repeat(80)}`;
+    const [r] = searchNotes("target", [note("1", "A", body)]);
+    const m = r.matches[0];
+    expect(m.snippet.startsWith("…")).toBe(false);
+    expect(m.snippet.startsWith("target")).toBe(true);
+    expect(m.snippet.endsWith("…")).toBe(true); // long tail is cut
+    expect(m.snippet).not.toContain("prior");
   });
 
   it("omits ellipses for a short body and keeps offsets in range", () => {

@@ -43,16 +43,28 @@ function collapseWhitespace(text: string): string {
   return text.replace(/\s+/g, " ");
 }
 
-/** Build the single-line snippet + in-snippet match offsets for one occurrence. */
+/**
+ * Build the single-line snippet + in-snippet match offsets for one occurrence.
+ *
+ * Context is clamped to the match's own line: the window never crosses a
+ * user-entered newline, so text the user put on a *different* line never leaks
+ * into the snippet (soft-wrapped long lines are one line here — that's fine).
+ */
 function buildSnippet(
   body: string,
   start: number,
   end: number,
 ): Pick<NoteMatch, "snippet" | "matchStart" | "matchEnd"> {
-  const contextStart = Math.max(0, start - SNIPPET_CONTEXT_CHARS);
-  const contextEnd = Math.min(body.length, end + SNIPPET_CONTEXT_CHARS);
-  const leadingEllipsis = contextStart > 0 ? "…" : "";
-  const trailingEllipsis = contextEnd < body.length ? "…" : "";
+  // Line bounds around the match: just after the previous newline, up to the next one.
+  const lineStart = body.lastIndexOf("\n", start - 1) + 1;
+  const nextNewline = body.indexOf("\n", end);
+  const lineEnd = nextNewline === -1 ? body.length : nextNewline;
+
+  const contextStart = Math.max(lineStart, start - SNIPPET_CONTEXT_CHARS);
+  const contextEnd = Math.min(lineEnd, end + SNIPPET_CONTEXT_CHARS);
+  // Ellipsis only when we truncated *within* the line (not at a natural line edge).
+  const leadingEllipsis = contextStart > lineStart ? "…" : "";
+  const trailingEllipsis = contextEnd < lineEnd ? "…" : "";
 
   // Collapse each part independently so the match boundaries stay exact; then
   // drop a single stray edge space collapse may have produced next to an ellipsis.

@@ -15,12 +15,14 @@
   let {
     notes,
     query = $bindable(''),
+    collapsed = $bindable(new Set()),
     onOpen,
     onClose,
   }: {
     notes: Note[];
-    // Bindable so the query survives leaving/re-entering search mode (owned by App).
+    // Bindable so query + collapsed groups survive leaving/re-entering search (owned by App).
     query: string;
+    collapsed: Set<string>;
     onOpen: (noteId: string, match: NoteMatch) => void;
     onClose: () => void;
   } = $props();
@@ -28,8 +30,6 @@
   // `applied` trails `query` by the debounce so results don't recompute on every keystroke.
   let applied = $state(query);
   let input: HTMLInputElement;
-  // Note ids whose result group is collapsed (local to this open; resets on reopen).
-  let collapsed = $state<Set<string>>(new Set());
 
   const applyQuery = debounce(() => {
     applied = query;
