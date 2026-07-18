@@ -41,6 +41,9 @@
   // Guards the persist effect until the stored session state has been restored,
   // so we don't clobber it with defaults during startup.
   let searchHydrated = $state(false);
+  // Guards the last-note persist effect until the mount restore has run, so a
+  // note-change write can't clobber the stored cursor during startup.
+  let noteHydrated = $state(false);
 
   // Keep the document theme in sync with the preference.
   $effect(() => applyTheme(settings.theme));
@@ -204,9 +207,15 @@
       current = note;
       body = note.body;
     } else {
-      await loadNote(notes[0].id);
+      // Reopen on the note the user last had open; fall back to notes[0] if the
+      // remembered id is missing (deleted, imported away, or never set).
+      const savedId = settings.lastNoteId;
+      const targetId = savedId && notes.some((n) => n.id === savedId) ? savedId : notes[0].id;
+      await loadNote(targetId);
     }
     status = 'saved';
+    // Let the last-note persist effect run now that the restore is done.
+    noteHydrated = true;
 
     // Restore where the user left off: their last query + collapsed groups, and
     // reopen search itself if that was the page they were on.
@@ -216,6 +225,16 @@
     if (saved.active) await openSearch();
     // Only now let the persist effect run, so it can't overwrite the restore with defaults.
     searchHydrated = true;
+  });
+
+  // Remember the current note as the cursor to restore on next panel open. Gated
+  // on hydration so the mount restore can't be clobbered, and skips redundant
+  // sync writes when the id is already stored.
+  $effect(() => {
+    const id = current?.id; // track it so the effect re-runs on note change
+    if (!noteHydrated || !id) return;
+    if (settings.lastNoteId === id) return;
+    saveSettings({ ...settings, lastNoteId: id });
   });
 
   // Persist the search page state to session storage so it survives panel reopen.
