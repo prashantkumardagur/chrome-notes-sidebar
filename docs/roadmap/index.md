@@ -5,7 +5,8 @@ lists only **upcoming** and **deferred** work. Each item is one small PR.
 
 ## Next Tasks
 
-_Nothing queued — see [Deferred](#deferred)._
+- [Regex search](./regex-search.md) — query becomes a regex (always-on), with an `Aa` case toggle
+  and an invalid-pattern hint (built on [search.md](./search.md) / [highlighter.md](./highlighter.md)).
 
 ## Done
 
