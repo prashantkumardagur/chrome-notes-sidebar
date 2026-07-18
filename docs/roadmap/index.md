@@ -25,13 +25,9 @@ Each has a self-contained spec in this directory:
     settings UI).
 * [Markdown cheat sheet](./markdown-cheat-sheet.md) — a collapsible GFM syntax reference in the ⓘ info
   popover.
-* [Keyboard shortcuts reference](./keyboard-shortcuts-reference.md) — a collapsible list of the app's
-  current shortcuts in the ⓘ info popover (live toggle-key binding, per-platform modifiers).
 * [More keyboard shortcuts](./more-shortcuts.md) — in-panel shortcuts for the common actions
   (toggle view/settings/info, new note, cycle notes) behind one keymap; folds in the existing search
   shortcut.
-  * Coordinates with [Keyboard shortcuts reference](./keyboard-shortcuts-reference.md) (should display
-    from the same keymap) — no hard ordering.
 
 ## Deferred
 
