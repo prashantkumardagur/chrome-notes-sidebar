@@ -11,11 +11,8 @@ Each has a self-contained spec in this directory:
 
 * [Editor formatting toolbar](./formatting-toolbar.md) — bold/italic/link/code/heading/list toolbar in
   the editor + `Cmd/Ctrl+B/I/K`, wrapping the textarea selection.
-* [Render raw HTML as text](./render-html-as-text.md) — embedded HTML in a note renders as literal
-  text, not live markup (defense-in-depth + predictable rendering).
 * [Interactive task lists](./interactive-task-lists.md) — tick `- [ ]`/`- [x]` checkboxes in View
   mode, writing back to the note.
-  * Depends on [Render raw HTML as text](./render-html-as-text.md).
 * [Organize notes: sort + reorder](./organize-notes.md) — a dedicated surface to sort notes
   (Manual / Title A–Z / Last edited) and manually reorder (drag + keyboard). Covers the old "Reorder
   notes" and "Sort notes" items. (Adds a `sortMode` field to synced settings **data**, but its UI is in

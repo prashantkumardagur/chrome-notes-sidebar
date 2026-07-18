@@ -11,6 +11,7 @@ Key choices and the reasoning. Terse on purpose — code is the source of truth 
 | One `note:<id>` item each + a `notes:index` item | Keeps each note under the 8 KB item cap; index stays tiny. |
 | **`MAX_NOTE_CHARS = 7500`** (under the ~7680 B body budget) | Safe for ASCII; multi-byte text is additionally guarded by a byte check (`bodyFitsStorage`). |
 | **GFM, always sanitized** (`marked` + `DOMPurify`) | Familiar markdown; note content is untrusted → must sanitize before render. |
+| **Raw HTML in notes renders as literal text** (escaped in a `marked` `html` renderer override) | Predictable rendering + defense-in-depth; Markdown-generated HTML (headings, tables, task lists, md images) is unaffected, and DOMPurify stays to sanitize that Markdown output (e.g. `javascript:` links). |
 | Oversized save is **blocked and surfaced**, not silently failed | Avoids data-loss surprises when a note can't fit a sync item. |
 
 ## Tech & tooling
