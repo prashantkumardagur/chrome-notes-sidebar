@@ -12,7 +12,8 @@ ours**. Interaction model = Google Tasks, but for notes.
 - **Autosave** to `chrome.storage.sync`, 3s debounced — cross-device, no account.
 - **Per-note character budget** with a live `used/limit` counter and a save-state dot (Saving / Saved).
 - **Cross-note search** (🔍 in the note actions, or Cmd/Ctrl+`/`): live, case-insensitive substring
-  search over every note's body, results grouped by note; click a result to open that note.
+  search over every note's body, results grouped by note; click a result to open that note and jump
+  to the match (selected in Edit mode, highlighted + scrolled to in View mode).
 
 Next and deferred work: [roadmap](./roadmap/index.md). Why it's built this way: [decisions.md](./decisions.md).
 

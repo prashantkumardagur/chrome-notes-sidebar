@@ -41,6 +41,17 @@
   // Guards the persist effect until the stored session state has been restored,
   // so we don't clobber it with defaults during startup.
   let searchHydrated = $state(false);
+  // Jump-to-match state set when a search result is opened, consumed by the editor
+  // (native selection) or the view (rendered <mark>s). Exactly one is non-null at a
+  // time — whichever matches the mode the note opened in — and both reset on any
+  // interaction (edit/dismiss), note switch, or Edit/View toggle so nothing lingers.
+  let pendingSelect = $state<{ start: number; end: number } | null>(null);
+  let pendingHighlight = $state<{ query: string; nearestIndex: number } | null>(null);
+
+  function clearPendingHighlight() {
+    pendingSelect = null;
+    pendingHighlight = null;
+  }
 
   // Keep the document theme in sync with the preference.
   $effect(() => applyTheme(settings.theme));
@@ -92,6 +103,9 @@
   }
 
   function onEdit() {
+    // Typing invalidates the jump-to-match selection, so drop it (the native
+    // selection is already gone) to keep it from re-applying on a later remount.
+    pendingSelect = null;
     status = 'saving';
     scheduleSave();
   }
@@ -99,6 +113,8 @@
   async function selectNote(id: string) {
     // Search is its own page: picking a note (from the selector or a result) leaves it.
     closeSearch();
+    // A note switch always clears any pending jump-to-match highlight.
+    clearPendingHighlight();
     if (id === current?.id) return;
     await commitPending();
     await loadNote(id);
@@ -127,10 +143,18 @@
   }
 
   // Opening a result switches to that note (selectNote leaves search + applies the
-  // view preference). `match` is ignored here; it's the seam the highlighter builds on.
-  // The query is preserved so returning to search restores the last results.
-  async function openSearchResult(noteId: string, _match: NoteMatch) {
+  // view preference), then arms the jump-to-match highlight for whichever mode the
+  // note actually opened in. The query is preserved so returning to search restores
+  // the last results.
+  async function openSearchResult(noteId: string, match: NoteMatch, index: number) {
     await selectNote(noteId);
+    if (mode === 'edit') {
+      pendingSelect = { start: match.start, end: match.end };
+    } else {
+      // The matched text (original case) is exactly the searched substring; deriving
+      // it from the body avoids threading the raw query through the open call.
+      pendingHighlight = { query: body.slice(match.start, match.end), nearestIndex: index };
+    }
   }
 
   async function createNote() {
@@ -270,7 +294,7 @@
       onSearch={toggleSearch}
       searchActive={searching}
     />
-    <ViewEditTabs bind:mode />
+    <ViewEditTabs bind:mode onchange={clearPendingHighlight} />
   </header>
 
   <main class="content">
@@ -283,9 +307,9 @@
         onClose={closeSearch}
       />
     {:else if mode === 'edit'}
-      <MarkdownEditor bind:value={body} oninput={onEdit} maxlength={MAX_NOTE_CHARS} />
+      <MarkdownEditor bind:value={body} oninput={onEdit} maxlength={MAX_NOTE_CHARS} select={pendingSelect} />
     {:else}
-      <MarkdownView source={body} />
+      <MarkdownView source={body} highlight={pendingHighlight} onDismissHighlight={clearPendingHighlight} />
     {/if}
   </main>
 

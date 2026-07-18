@@ -1,12 +1,44 @@
 <script lang="ts">
   import { renderMarkdown } from '../lib/markdown/render';
+  import { clearViewHighlights, highlightMatchesInView } from '../lib/search/highlight';
 
-  let { source = '' }: { source: string } = $props();
+  let {
+    source = '',
+    highlight = null,
+    onDismissHighlight,
+  }: {
+    source: string;
+    // Set when a note is opened from a search result in View mode: highlight every
+    // occurrence of `query` and scroll to the one nearest the clicked occurrence.
+    highlight?: { query: string; nearestIndex: number } | null;
+    onDismissHighlight?: () => void;
+  } = $props();
   const html = $derived(renderMarkdown(source));
+
+  let viewEl: HTMLDivElement;
+
+  // Runs after `html` is in the DOM (reading `html` makes it a dependency), so the
+  // marks are applied to freshly rendered content. A source change reassigns
+  // innerHTML, which wipes old marks — no manual clear needed on note switch.
+  $effect(() => {
+    html;
+    if (highlight && viewEl) highlightMatchesInView(viewEl, highlight.query, highlight.nearestIndex);
+  });
+
+  // Any click in the note dismisses the highlights and tells App to drop the
+  // pending highlight so the effect doesn't re-apply them.
+  function dismiss() {
+    if (viewEl) clearViewHighlights(viewEl);
+    onDismissHighlight?.();
+  }
 </script>
 
 <!-- `html` is sanitized by renderMarkdown (DOMPurify) before it reaches here. -->
-<div class="view markdown-body">
+<!-- Dismiss-on-click is a pointer convenience over already-accessible content; keyboard
+     users clear highlights by switching notes or toggling Edit/View. -->
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div class="view markdown-body" bind:this={viewEl} onclick={dismiss}>
   {#if source.trim().length === 0}
     <p class="empty">Nothing to preview yet. Switch to <strong>Edit</strong> to start writing.</p>
   {:else}
@@ -89,5 +121,14 @@
 
   .markdown-body :global(img) {
     max-width: 100%;
+  }
+
+  /* Jump-to-match highlight from a search result. Accent fill with the page bg as
+     text keeps it legible in both light and dark themes. */
+  .markdown-body :global(mark.search-hit) {
+    background: var(--accent);
+    color: var(--bg);
+    border-radius: 2px;
+    padding: 0 1px;
   }
 </style>

@@ -23,7 +23,9 @@
     // Bindable so query + collapsed groups survive leaving/re-entering search (owned by App).
     query: string;
     collapsed: Set<string>;
-    onOpen: (noteId: string, match: NoteMatch) => void;
+    // `index` is the clicked occurrence's position within this note's `matches`,
+    // used as the nearest-occurrence target when highlighting in View mode.
+    onOpen: (noteId: string, match: NoteMatch, index: number) => void;
     onClose: () => void;
   } = $props();
 
@@ -106,8 +108,8 @@
             <span class="group-count">{result.totalMatches}</span>
           </button>
           {#if !isCollapsed}
-            {#each result.matches as match (match.start)}
-              <button type="button" class="row" onclick={() => onOpen(result.id, match)}>
+            {#each result.matches as match, i (match.start)}
+              <button type="button" class="row" onclick={() => onOpen(result.id, match, i)}>
                 <!-- Snippet is *raw* untrusted note text: slice around the match and put
                      the emphasis in its own element — never {@html}. -->
                 <span class="snippet"

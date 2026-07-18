@@ -1,6 +1,14 @@
 <script lang="ts">
   type Mode = 'edit' | 'view';
-  let { mode = $bindable('edit') }: { mode: Mode } = $props();
+  // `onchange` fires only on a user toggle (not on programmatic mode changes), so
+  // App can distinguish "user switched tabs" and clear any pending search highlight.
+  let { mode = $bindable('edit'), onchange }: { mode: Mode; onchange?: (mode: Mode) => void } =
+    $props();
+
+  function pick(next: Mode) {
+    mode = next;
+    onchange?.(next);
+  }
 </script>
 
 <div class="tabs" role="tablist" aria-label="Editor mode">
@@ -9,7 +17,7 @@
     role="tab"
     aria-selected={mode === 'edit'}
     class:active={mode === 'edit'}
-    onclick={() => (mode = 'edit')}
+    onclick={() => pick('edit')}
   >
     Edit
   </button>
@@ -18,7 +26,7 @@
     role="tab"
     aria-selected={mode === 'view'}
     class:active={mode === 'view'}
-    onclick={() => (mode = 'view')}
+    onclick={() => pick('view')}
   >
     View
   </button>
