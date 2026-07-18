@@ -1,7 +1,7 @@
 /**
  * Jump-to-match highlighting for a note opened from a search result.
  *
- * Two surfaces need two strategies (see docs/roadmap/highlighter.md):
+ * Two surfaces need two strategies:
  * - Edit mode is a `<textarea>`, which can only show one native selection, so we
  *   select the exact clicked occurrence by its known body offsets.
  * - View mode is sanitized, rendered Markdown, where a raw-body offset can't be

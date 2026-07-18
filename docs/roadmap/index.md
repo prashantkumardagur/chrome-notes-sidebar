@@ -5,15 +5,7 @@ lists only **upcoming** and **deferred** work. Each item is one small PR.
 
 ## Next Tasks
 
-- [Regex search](./regex-search.md) — query becomes a regex (always-on), with an `Aa` case toggle
-  and an invalid-pattern hint (built on [search.md](./search.md) / [highlighter.md](./highlighter.md)).
-
-## Done
-
-- [Search (cross-note)](./search.md) — search panel, click-to-open, Cmd/Ctrl+`/` shortcut (PR 1) ✅
-- [Search result highlighting](./highlighter.md) — jump to + highlight the match (PR 2) ✅
-- [One transient surface open at a time](./single-open-popover.md) — opening any popover/search closes the others ✅
-- [Remember the last opened note](./last-opened-note.md) — reopen the panel on the note you last had open ✅
+_Nothing queued — see [Deferred](#deferred)._
 
 ## Deferred
 
