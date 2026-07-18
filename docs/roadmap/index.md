@@ -31,9 +31,12 @@ Each has a self-contained spec in this directory:
 * [Note stats](./note-stats.md) — word count + line count in the ⓘ info popover.
 * [Markdown cheat sheet](./markdown-cheat-sheet.md) — a collapsible GFM syntax reference in the ⓘ info
   popover.
+* [Keyboard shortcuts reference](./keyboard-shortcuts-reference.md) — a collapsible list of the app's
+  current shortcuts in the ⓘ info popover (live toggle-key binding, per-platform modifiers).
 
 ## Deferred
 
 * Password protection
 * Pin notes: a per-note pin that floats notes above the active sort order — revisit after
   [Organize notes](./organize-notes.md) ships (manual reorder may already cover the need).
+* More shortcuts
