@@ -8,6 +8,8 @@
     charLimit,
     noteCount,
     maxNotes,
+    open,
+    onOpenChange,
   }: {
     body: string;
     version: string;
@@ -15,10 +17,11 @@
     charLimit: number;
     noteCount: number;
     maxNotes: number;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
   } = $props();
 
   let root: HTMLElement;
-  let open = $state(false);
   let copied = $state(false);
   let copyTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -38,17 +41,17 @@
   }
 
   function toggleInfo() {
-    open = !open;
+    onOpenChange(!open);
   }
 
   // Close the popover on an outside click or Escape (mirrors NoteSelector).
   $effect(() => {
     if (!open) return;
     const onPointerDown = (e: PointerEvent) => {
-      if (root && !root.contains(e.target as Node)) open = false;
+      if (root && !root.contains(e.target as Node)) onOpenChange(false);
     };
     const onKeydown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') open = false;
+      if (e.key === 'Escape') onOpenChange(false);
     };
     document.addEventListener('pointerdown', onPointerDown);
     document.addEventListener('keydown', onKeydown);

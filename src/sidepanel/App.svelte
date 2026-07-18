@@ -17,6 +17,7 @@
   import type { Note, NoteMeta } from '../lib/storage/NotesRepository';
   import { bodyFitsStorage, MAX_NOTE_CHARS, MAX_NOTES } from '../lib/storage/limits';
   import { SyncNotesRepository } from '../lib/storage/SyncNotesRepository';
+  import { nextSurface, type Surface } from '../lib/ui/surfaces';
   import { debounce } from '../lib/util/debounce';
 
   const AUTOSAVE_DELAY_MS = 3000;
@@ -31,7 +32,10 @@
   let mode = $state<'edit' | 'view'>('edit');
   let status = $state<'saved' | 'saving' | 'error'>('saved');
   let settings = $state<Settings>(DEFAULT_SETTINGS);
-  let searching = $state(false);
+  // Single source of truth for which transient surface (dropdown/settings/info/search)
+  // is open — only one at a time. See src/lib/ui/surfaces.ts.
+  let activeSurface = $state<Surface | null>(null);
+  const searching = $derived(activeSurface === 'search');
   // Snapshot of every full note taken when search opens (list() only has metas).
   let searchNotesData = $state<Note[]>([]);
   // Kept across leaving/re-entering search (and panel close/reopen) so the user
@@ -48,6 +52,11 @@
   function saveSettings(next: Settings) {
     settings = next;
     void settingsRepo.save(next);
+  }
+
+  /** Coordinate the mutually-exclusive transient surfaces: opening one closes any other. */
+  function setSurface(id: Surface, open: boolean) {
+    activeSurface = nextSurface(activeSurface, id, open);
   }
 
   const scheduleSave = debounce(() => {
@@ -114,11 +123,12 @@
     searchNotesData = (await Promise.all(metas.map((m) => repo.get(m.id)))).filter(
       (n): n is Note => n !== null,
     );
-    searching = true;
+    // Flip to search only after the snapshot is populated, so the page never renders empty.
+    activeSurface = 'search';
   }
 
   function closeSearch() {
-    searching = false;
+    setSurface('search', false);
   }
 
   function toggleSearch() {
@@ -263,6 +273,8 @@
       {notes}
       currentId={current?.id ?? null}
       max={MAX_NOTES}
+      open={activeSurface === 'dropdown'}
+      onOpenChange={(o) => setSurface('dropdown', o)}
       onSelect={selectNote}
       onCreate={createNote}
       onRename={renameNote}
@@ -298,8 +310,17 @@
         charLimit={MAX_NOTE_CHARS}
         noteCount={notes.length}
         maxNotes={MAX_NOTES}
+        open={activeSurface === 'info'}
+        onOpenChange={(o) => setSurface('info', o)}
       />
-      <SettingsMenu {settings} onChange={saveSettings} onExport={exportBackup} onImport={importBackup} />
+      <SettingsMenu
+        {settings}
+        open={activeSurface === 'settings'}
+        onOpenChange={(o) => setSurface('settings', o)}
+        onChange={saveSettings}
+        onExport={exportBackup}
+        onImport={importBackup}
+      />
     </div>
     <div class="status" aria-live="polite">
       <span class="save" class:saved={isSaved}>{statusText}</span>

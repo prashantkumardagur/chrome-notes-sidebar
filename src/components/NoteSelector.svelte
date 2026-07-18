@@ -5,6 +5,8 @@
     notes,
     currentId,
     max,
+    open,
+    onOpenChange,
     onSelect,
     onCreate,
     onRename,
@@ -15,6 +17,8 @@
     notes: NoteMeta[];
     currentId: string | null;
     max: number;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
     onSelect: (id: string) => void;
     onCreate: () => void;
     onRename: (id: string, title: string) => void;
@@ -24,7 +28,6 @@
   } = $props();
 
   let root: HTMLElement;
-  let open = $state(false);
   let editing = $state(false);
   let draft = $state('');
 
@@ -33,11 +36,11 @@
 
   function toggleMenu() {
     if (editing) return;
-    open = !open;
+    onOpenChange(!open);
   }
 
   function pick(id: string) {
-    open = false;
+    onOpenChange(false);
     // Always notify: selecting even the current note must leave search mode.
     // selectNote() dedupes the actual note reload when the id is unchanged.
     onSelect(id);
@@ -45,13 +48,13 @@
 
   function create() {
     if (atCap) return;
-    open = false;
+    onOpenChange(false);
     onCreate();
   }
 
   function startRename() {
     if (!currentId) return;
-    open = false;
+    onOpenChange(false);
     draft = currentTitle;
     editing = true;
   }
@@ -79,10 +82,10 @@
   $effect(() => {
     if (!open) return;
     const onPointerDown = (e: PointerEvent) => {
-      if (root && !root.contains(e.target as Node)) open = false;
+      if (root && !root.contains(e.target as Node)) onOpenChange(false);
     };
     const onKeydown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') open = false;
+      if (e.key === 'Escape') onOpenChange(false);
     };
     document.addEventListener('pointerdown', onPointerDown);
     document.addEventListener('keydown', onKeydown);
