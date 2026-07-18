@@ -15,7 +15,8 @@ src/
   components/
     NoteSelector.svelte     note dropdown: select / create / rename / delete + count
     ViewEditTabs.svelte     View / Edit switch
-    MarkdownEditor.svelte   plain markdown textarea (enforces maxlength)
+    MarkdownEditor.svelte   markdown textarea (enforces maxlength) + thin formatting toolbar
+                            (bold/italic/link/code/heading/list, Cmd/Ctrl+B/I/K)
     MarkdownView.svelte     renders sanitized GFM
     CharCounter.svelte      used/limit counter, warns near cap
     UtilityBar.svelte       bottom-left tools: copy-all + info popover
@@ -39,6 +40,7 @@ src/
       searchState.ts           search-UI session state type + normalize
       SessionSearchStateRepository.ts  chrome.storage.session store (restores search on panel reopen)
     markdown/render.ts         GFM -> sanitized HTML
+    markdown/format.ts         pure text transforms for the toolbar (wrap/unwrap, line-prefix)
     ui/surfaces.ts             single-active-surface coordination — which transient popover/search page is open
     util/debounce.ts           trailing-edge debounce (autosave)
     util/time.ts               relative "last edited" formatting
@@ -77,6 +79,8 @@ tests/                         Vitest, mirrors src/ (one spec per meaningful mod
 - **Top:** note selector (left) + View / Edit tabs (right).
 - **Middle:** Markdown textarea (Edit) or rendered GFM (View) — or, while a transient surface is
   active, that surface's full-page content (search results, settings) replacing the editor/view.
+  Edit adds a thin formatting toolbar row above the textarea (bold/italic/link/code/heading/list;
+  `Cmd/Ctrl+B/I/K`), scoped to `MarkdownEditor.svelte` — not shown in View.
 - **Bottom-left:** tools (copy-all, info popover) + a standalone settings gear (toggles the
   settings page; footer/topbar stay visible while it's open).
 - **Bottom-right:** save-state dot + character counter (`used/limit`).

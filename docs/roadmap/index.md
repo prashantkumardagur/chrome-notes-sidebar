@@ -9,8 +9,6 @@ sub-points.
 
 Each has a self-contained spec in this directory:
 
-* [Editor formatting toolbar](./formatting-toolbar.md) — bold/italic/link/code/heading/list toolbar in
-  the editor + `Cmd/Ctrl+B/I/K`, wrapping the textarea selection.
 * [Interactive task lists](./interactive-task-lists.md) — tick `- [ ]`/`- [x]` checkboxes in View
   mode, writing back to the note.
 * [Organize notes: sort + reorder](./organize-notes.md) — a dedicated surface to sort notes
