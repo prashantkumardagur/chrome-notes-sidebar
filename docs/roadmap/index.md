@@ -28,7 +28,6 @@ Each has a self-contained spec in this directory:
   and word-wrap, added to the settings UI; synced.
   * Depends on [Revamp settings: popover → dedicated page](./settings-page.md) (adds controls to the
     settings UI).
-* [Note stats](./note-stats.md) — word count + line count in the ⓘ info popover.
 * [Markdown cheat sheet](./markdown-cheat-sheet.md) — a collapsible GFM syntax reference in the ⓘ info
   popover.
 * [Keyboard shortcuts reference](./keyboard-shortcuts-reference.md) — a collapsible list of the app's

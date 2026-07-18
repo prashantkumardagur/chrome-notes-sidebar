@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { lineCount, wordCount } from '../lib/notes/stats';
   import { relativeTime } from '../lib/util/time';
 
   let {
@@ -26,6 +27,8 @@
   let copyTimer: ReturnType<typeof setTimeout> | undefined;
 
   const isEmpty = $derived(body.length === 0);
+  const words = $derived(wordCount(body));
+  const lines = $derived(lineCount(body));
 
   async function copyAll() {
     if (isEmpty) return;
@@ -97,6 +100,10 @@
         <dd>{updatedAt ? relativeTime(updatedAt) : '—'}</dd>
         <dt>Characters</dt>
         <dd>{body.length}/{charLimit}</dd>
+        <dt>Words</dt>
+        <dd>{words}</dd>
+        <dt>Lines</dt>
+        <dd>{lines}</dd>
         <dt>Notes</dt>
         <dd>{noteCount}/{maxNotes}</dd>
         <dt>Version</dt>
