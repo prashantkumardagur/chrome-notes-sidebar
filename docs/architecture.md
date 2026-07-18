@@ -34,6 +34,7 @@ src/
     commands/panelToggle.ts    keyboard-command handler (toggles the side panel open/closed)
     search/
       search.ts                pure case-insensitive body-only substring search (offsets + line snippets)
+      highlight.ts             jump-to-match: textarea select (edit) + rendered-DOM <mark>s (view)
       searchState.ts           search-UI session state type + normalize
       SessionSearchStateRepository.ts  chrome.storage.session store (restores search on panel reopen)
     markdown/render.ts         GFM -> sanitized HTML

@@ -1,13 +1,30 @@
 <script lang="ts">
+  import { selectRangeInTextarea } from '../lib/search/highlight';
+
   let {
     value = $bindable(''),
     oninput,
     maxlength,
-  }: { value: string; oninput?: () => void; maxlength?: number } = $props();
+    select = null,
+  }: {
+    value: string;
+    oninput?: () => void;
+    maxlength?: number;
+    // Set when a note is opened from a search result in Edit mode: the exact body
+    // range to select + scroll into view. App clears it after so it can't re-fire.
+    select?: { start: number; end: number } | null;
+  } = $props();
+
+  let textarea: HTMLTextAreaElement;
+
+  $effect(() => {
+    if (select && textarea) selectRangeInTextarea(textarea, select.start, select.end);
+  });
 </script>
 
 <textarea
   class="editor"
+  bind:this={textarea}
   bind:value
   {oninput}
   {maxlength}
