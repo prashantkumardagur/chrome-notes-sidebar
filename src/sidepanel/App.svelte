@@ -5,7 +5,7 @@
   import MarkdownView from '../components/MarkdownView.svelte';
   import NoteSelector from '../components/NoteSelector.svelte';
   import SearchPanel from '../components/SearchPanel.svelte';
-  import SettingsMenu from '../components/SettingsMenu.svelte';
+  import SettingsPanel from '../components/SettingsPanel.svelte';
   import UtilityBar from '../components/UtilityBar.svelte';
   import ViewEditTabs from '../components/ViewEditTabs.svelte';
   import { backupFileName, buildBackup, parseBackup, serializeBackup } from '../lib/backup/backup';
@@ -36,6 +36,7 @@
   // is open — only one at a time. See src/lib/ui/surfaces.ts.
   let activeSurface = $state<Surface | null>(null);
   const searching = $derived(activeSurface === 'search');
+  const showSettings = $derived(activeSurface === 'settings');
   // Snapshot of every full note taken when search opens (list() only has metas).
   let searchNotesData = $state<Note[]>([]);
   // Kept across leaving/re-entering search (and panel close/reopen) so the user
@@ -155,6 +156,22 @@
   function toggleSearch() {
     if (searching) closeSearch();
     else void openSearch();
+  }
+
+  /** Enter the settings page: flush pending edits first (mirrors openSearch), same reasoning —
+   *  the editor unmounts when the page replaces it, so an in-flight edit must be saved first. */
+  async function openSettings() {
+    await commitPending();
+    setSurface('settings', true);
+  }
+
+  function closeSettings() {
+    setSurface('settings', false);
+  }
+
+  function toggleSettings() {
+    if (showSettings) closeSettings();
+    else void openSettings();
   }
 
   // Opening a result switches to that note (selectNote leaves search + applies the
@@ -346,6 +363,14 @@
         onOpen={openSearchResult}
         onClose={closeSearch}
       />
+    {:else if showSettings}
+      <SettingsPanel
+        {settings}
+        onChange={saveSettings}
+        onExport={exportBackup}
+        onImport={importBackup}
+        onClose={closeSettings}
+      />
     {:else if mode === 'edit'}
       <MarkdownEditor bind:value={body} oninput={onEdit} maxlength={MAX_NOTE_CHARS} select={pendingSelect} />
     {:else}
@@ -365,14 +390,17 @@
         open={activeSurface === 'info'}
         onOpenChange={(o) => setSurface('info', o)}
       />
-      <SettingsMenu
-        {settings}
-        open={activeSurface === 'settings'}
-        onOpenChange={(o) => setSurface('settings', o)}
-        onChange={saveSettings}
-        onExport={exportBackup}
-        onImport={importBackup}
-      />
+      <button
+        type="button"
+        class="settings-trigger"
+        class:active={showSettings}
+        onclick={toggleSettings}
+        aria-pressed={showSettings}
+        title="Settings"
+        aria-label="Settings"
+      >
+        <span class="glyph" aria-hidden="true">⚙</span>
+      </button>
     </div>
     <div class="status" aria-live="polite">
       <span class="save" class:saved={isSaved}>{statusText}</span>
@@ -419,6 +447,44 @@
     display: flex;
     align-items: center;
     gap: 6px;
+  }
+
+  /* Standalone gear trigger, styled to match UtilityBar's tools but not part of its
+     group. The gear glyph renders small and low on the baseline, so bump its size and
+     center it with flex; the trimmed vertical padding keeps the box height equal to
+     the neighbouring copy/info buttons. */
+  .settings-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    appearance: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 15px;
+    line-height: 1;
+    padding: 4px 9px;
+    cursor: pointer;
+  }
+
+  .settings-trigger:hover {
+    background: var(--bg-subtle);
+    color: var(--text);
+  }
+
+  /* Accent-tinted while the settings page is open, matching NoteSelector's search toggle. */
+  .settings-trigger.active {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  /* The gear glyph's visual center sits below its font box; nudge it up so it
+     reads as vertically centered within the button. */
+  .glyph {
+    display: block;
+    transform: translateY(-1px);
   }
 
   .status {
