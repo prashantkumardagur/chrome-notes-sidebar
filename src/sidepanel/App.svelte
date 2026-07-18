@@ -4,11 +4,14 @@
   import MarkdownEditor from '../components/MarkdownEditor.svelte';
   import MarkdownView from '../components/MarkdownView.svelte';
   import NoteSelector from '../components/NoteSelector.svelte';
+  import SearchPanel from '../components/SearchPanel.svelte';
   import SettingsMenu from '../components/SettingsMenu.svelte';
   import UtilityBar from '../components/UtilityBar.svelte';
   import ViewEditTabs from '../components/ViewEditTabs.svelte';
   import { backupFileName, buildBackup, parseBackup, serializeBackup } from '../lib/backup/backup';
   import { nextUntitledTitle, normalizeTitle } from '../lib/notes/title';
+  import type { NoteMatch } from '../lib/search/search';
+  import { SessionSearchStateRepository } from '../lib/search/SessionSearchStateRepository';
   import { applyTheme, DEFAULT_SETTINGS, resolveViewMode, type Settings } from '../lib/settings/settings';
   import { SyncSettingsRepository } from '../lib/settings/SyncSettingsRepository';
   import type { Note, NoteMeta } from '../lib/storage/NotesRepository';
@@ -19,6 +22,7 @@
   const AUTOSAVE_DELAY_MS = 3000;
   const repo = new SyncNotesRepository();
   const settingsRepo = new SyncSettingsRepository();
+  const searchStateRepo = new SessionSearchStateRepository();
   const version = chrome.runtime.getManifest().version;
 
   let notes = $state<NoteMeta[]>([]);
@@ -27,6 +31,16 @@
   let mode = $state<'edit' | 'view'>('edit');
   let status = $state<'saved' | 'saving' | 'error'>('saved');
   let settings = $state<Settings>(DEFAULT_SETTINGS);
+  let searching = $state(false);
+  // Snapshot of every full note taken when search opens (list() only has metas).
+  let searchNotesData = $state<Note[]>([]);
+  // Kept across leaving/re-entering search (and panel close/reopen) so the user
+  // returns to where they left: the query and which result groups were collapsed.
+  let searchQuery = $state('');
+  let searchCollapsed = $state<Set<string>>(new Set());
+  // Guards the persist effect until the stored session state has been restored,
+  // so we don't clobber it with defaults during startup.
+  let searchHydrated = $state(false);
 
   // Keep the document theme in sync with the preference.
   $effect(() => applyTheme(settings.theme));
@@ -83,11 +97,40 @@
   }
 
   async function selectNote(id: string) {
+    // Search is its own page: picking a note (from the selector or a result) leaves it.
+    closeSearch();
     if (id === current?.id) return;
     await commitPending();
     await loadNote(id);
     // The view preference decides the mode on note change ('persistent' keeps it).
     mode = resolveViewMode(settings.view, mode);
+  }
+
+  /** Enter search mode: flush pending edits, then snapshot every full note body. */
+  async function openSearch() {
+    // Flush any pending autosave so the snapshot reflects the latest text (incl. unsaved edits).
+    await commitPending();
+    const metas = await repo.list();
+    searchNotesData = (await Promise.all(metas.map((m) => repo.get(m.id)))).filter(
+      (n): n is Note => n !== null,
+    );
+    searching = true;
+  }
+
+  function closeSearch() {
+    searching = false;
+  }
+
+  function toggleSearch() {
+    if (searching) closeSearch();
+    else void openSearch();
+  }
+
+  // Opening a result switches to that note (selectNote leaves search + applies the
+  // view preference). `match` is ignored here; it's the seam the highlighter builds on.
+  // The query is preserved so returning to search restores the last results.
+  async function openSearchResult(noteId: string, _match: NoteMatch) {
+    await selectNote(noteId);
   }
 
   async function createNote() {
@@ -164,6 +207,36 @@
       await loadNote(notes[0].id);
     }
     status = 'saved';
+
+    // Restore where the user left off: their last query + collapsed groups, and
+    // reopen search itself if that was the page they were on.
+    const saved = await searchStateRepo.get();
+    searchQuery = saved.query;
+    searchCollapsed = new Set(saved.collapsed);
+    if (saved.active) await openSearch();
+    // Only now let the persist effect run, so it can't overwrite the restore with defaults.
+    searchHydrated = true;
+  });
+
+  // Persist the search page state to session storage so it survives panel reopen.
+  $effect(() => {
+    // Read the tracked state up front so the effect subscribes even before hydration.
+    const snapshot = { active: searching, query: searchQuery, collapsed: [...searchCollapsed] };
+    if (!searchHydrated) return;
+    void searchStateRepo.save(snapshot);
+  });
+
+  // Cmd/Ctrl+`/` toggles search. This listener lives in the panel document, so it
+  // only fires when the side panel has focus — exactly the "only in our sidebar" scope.
+  $effect(() => {
+    const onKeydown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
+        e.preventDefault();
+        toggleSearch();
+      }
+    };
+    window.addEventListener('keydown', onKeydown);
+    return () => window.removeEventListener('keydown', onKeydown);
   });
 
   // Flush a pending autosave if the panel is being hidden/closed.
@@ -194,12 +267,22 @@
       onCreate={createNote}
       onRename={renameNote}
       onDelete={deleteNote}
+      onSearch={toggleSearch}
+      searchActive={searching}
     />
     <ViewEditTabs bind:mode />
   </header>
 
   <main class="content">
-    {#if mode === 'edit'}
+    {#if searching}
+      <SearchPanel
+        notes={searchNotesData}
+        bind:query={searchQuery}
+        bind:collapsed={searchCollapsed}
+        onOpen={openSearchResult}
+        onClose={closeSearch}
+      />
+    {:else if mode === 'edit'}
       <MarkdownEditor bind:value={body} oninput={onEdit} maxlength={MAX_NOTE_CHARS} />
     {:else}
       <MarkdownView source={body} />

@@ -9,6 +9,8 @@
     onCreate,
     onRename,
     onDelete,
+    onSearch,
+    searchActive = false,
   }: {
     notes: NoteMeta[];
     currentId: string | null;
@@ -17,6 +19,8 @@
     onCreate: () => void;
     onRename: (id: string, title: string) => void;
     onDelete: (id: string) => void;
+    onSearch: () => void;
+    searchActive?: boolean;
   } = $props();
 
   let root: HTMLElement;
@@ -34,7 +38,9 @@
 
   function pick(id: string) {
     open = false;
-    if (id !== currentId) onSelect(id);
+    // Always notify: selecting even the current note must leave search mode.
+    // selectNote() dedupes the actual note reload when the id is unchanged.
+    onSelect(id);
   }
 
   function create() {
@@ -153,6 +159,17 @@
         aria-label="Delete note"
       >
         🗑
+      </button>
+      <button
+        type="button"
+        class="icon"
+        class:active={searchActive}
+        onclick={onSearch}
+        aria-pressed={searchActive}
+        title="Search notes"
+        aria-label="Search notes"
+      >
+        🔍
       </button>
     {/if}
   </div>
@@ -275,6 +292,12 @@
   .icon:hover:not(:disabled) {
     background: var(--bg-subtle);
     color: var(--text);
+  }
+
+  /* Search toggle reads as pressed while search mode is on. */
+  .icon.active {
+    background: var(--bg-subtle);
+    color: var(--accent);
   }
 
   .icon:last-child {
