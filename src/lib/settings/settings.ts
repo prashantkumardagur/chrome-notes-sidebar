@@ -21,6 +21,8 @@ export interface Settings {
    * force that mode on every note change.
    */
   view: ViewPref;
+  /** Id of the note last opened, restored on panel open. Device cursor; may be stale. */
+  lastNoteId?: string;
 }
 
 export const DEFAULT_SETTINGS: Settings = { theme: "system", view: "persistent" };
@@ -35,7 +37,13 @@ const VIEW_PREFS: readonly ViewPref[] = ["persistent", "edit", "view"];
 export function normalizeSettings(raw: Partial<Settings> | null | undefined): Settings {
   const theme = raw?.theme && THEME_PREFS.includes(raw.theme) ? raw.theme : DEFAULT_SETTINGS.theme;
   const view = raw?.view && VIEW_PREFS.includes(raw.view) ? raw.view : DEFAULT_SETTINGS.view;
-  return { theme, view };
+  // Carry a valid lastNoteId through, but omit it otherwise so stored/normalized
+  // objects stay a clean { theme, view } when there's no cursor to remember.
+  const result: Settings = { theme, view };
+  if (typeof raw?.lastNoteId === "string" && raw.lastNoteId.length > 0) {
+    result.lastNoteId = raw.lastNoteId;
+  }
+  return result;
 }
 
 /**

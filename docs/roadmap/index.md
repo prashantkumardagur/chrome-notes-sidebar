@@ -6,12 +6,12 @@ lists only **upcoming** and **deferred** work. Each item is one small PR.
 ## Next Tasks
 
 1. [Search result highlighting](./highlighter.md) — jump to + highlight the match (PR 3, depends on Search)
-2. [Remember the last opened note](./last-opened-note.md) — reopen the panel on the note you last had open
 
 ## Done
 
 - [Search (cross-note)](./search.md) — search panel, click-to-open, Cmd/Ctrl+`/` shortcut (PR 1) ✅
 - [One transient surface open at a time](./single-open-popover.md) — opening any popover/search closes the others ✅
+- [Remember the last opened note](./last-opened-note.md) — reopen the panel on the note you last had open ✅
 
 ## Deferred
 
