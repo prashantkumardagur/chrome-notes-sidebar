@@ -88,6 +88,81 @@ function linePrefix(text: string, start: number, end: number, prefix: string): F
   return { text: newText, selectionStart: lineStart, selectionEnd: lineStart + newSpan.length };
 }
 
+/** Indent unit inserted by Tab in the editor: 2 spaces (matches the CSS `tab-size`). */
+export const INDENT = "  ";
+
+/** Line span [lineStart, lineEnd) covering every line the selection [start, end) touches. */
+function lineSpan(text: string, start: number, end: number): { lineStart: number; lineEnd: number } {
+  const lineStart = text.lastIndexOf("\n", start - 1) + 1;
+  const nextNewline = text.indexOf("\n", end);
+  const lineEnd = nextNewline === -1 ? text.length : nextNewline;
+  return { lineStart, lineEnd };
+}
+
+/**
+ * Tab: insert an indent at the caret (empty selection), or indent every line a
+ * non-empty selection touches — keeping the selection over the same text.
+ */
+export function indent(text: string, start: number, end: number): FormatResult {
+  if (start === end) {
+    const newText = text.slice(0, start) + INDENT + text.slice(start);
+    const caret = start + INDENT.length;
+    return { text: newText, selectionStart: caret, selectionEnd: caret };
+  }
+
+  const { lineStart, lineEnd } = lineSpan(text, start, end);
+  const lines = text.slice(lineStart, lineEnd).split("\n");
+  const newSpan = lines.map((line) => INDENT + line).join("\n");
+  const newText = text.slice(0, lineStart) + newSpan + text.slice(lineEnd);
+  // One indent lands before `start` (its own line); one lands before `end` for
+  // every touched line, since each line begins at or before `end`.
+  return {
+    text: newText,
+    selectionStart: start + INDENT.length,
+    selectionEnd: end + INDENT.length * lines.length,
+  };
+}
+
+/** Leading whitespace Shift+Tab strips from a line: one tab, or up to `INDENT.length` spaces. */
+function leadingIndentWidth(line: string): number {
+  if (line.startsWith("\t")) return 1;
+  let n = 0;
+  while (n < INDENT.length && line[n] === " ") n++;
+  return n;
+}
+
+/**
+ * Shift+Tab: outdent every line the selection touches, stripping one level of
+ * leading indentation. Lines with no indent are left as-is; the selection is
+ * shifted left to track the removed characters (clamped to each line's start).
+ */
+export function outdent(text: string, start: number, end: number): FormatResult {
+  const { lineStart, lineEnd } = lineSpan(text, start, end);
+  const lines = text.slice(lineStart, lineEnd).split("\n");
+
+  let newStart = start;
+  let newEnd = end;
+  let cursor = lineStart; // start-of-line position in the original text
+  const newLines = lines.map((line) => {
+    const removed = leadingIndentWidth(line);
+    if (removed > 0) {
+      // Shift each end left only by the removed chars that sit before it on this line.
+      if (start > cursor) newStart -= Math.min(removed, start - cursor);
+      if (end > cursor) newEnd -= Math.min(removed, end - cursor);
+    }
+    cursor += line.length + 1; // + the "\n" that split() dropped
+    return line.slice(removed);
+  });
+
+  const newSpan = newLines.join("\n");
+  const newText = text.slice(0, lineStart) + newSpan + text.slice(lineEnd);
+  return {
+    text: newText,
+    selectionStart: Math.max(lineStart, newStart),
+    selectionEnd: Math.max(lineStart, newEnd),
+  };
+}
+
 /** Apply a formatting action to `text` given the current selection. Pure. */
 export function applyFormat(
   text: string,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyFormat } from "../../src/lib/markdown/format";
+import { applyFormat, indent, outdent } from "../../src/lib/markdown/format";
 
 describe("applyFormat", () => {
   describe("bold", () => {
@@ -151,6 +151,79 @@ describe("applyFormat", () => {
       const text = "- a\nb\n- c";
       const result = applyFormat(text, 0, text.length, "list");
       expect(result.text).toBe("- - a\n- b\n- - c");
+    });
+  });
+
+  describe("indent (Tab)", () => {
+    it("inserts two spaces at the caret on an empty selection", () => {
+      const result = indent("abc", 3, 3);
+      expect(result.text).toBe("abc  ");
+      expect(result.selectionStart).toBe(5);
+      expect(result.selectionEnd).toBe(5);
+    });
+
+    it("inserts two spaces mid-line without touching the rest", () => {
+      const result = indent("abcd", 2, 2);
+      expect(result.text).toBe("ab  cd");
+      expect(result.selectionStart).toBe(4);
+      expect(result.selectionEnd).toBe(4);
+    });
+
+    it("indents a single selected line, keeping the same text selected", () => {
+      const result = indent("hello", 0, 5);
+      expect(result.text).toBe("  hello");
+      expect(result.text.slice(result.selectionStart, result.selectionEnd)).toBe("hello");
+    });
+
+    it("indents every line a multi-line selection touches", () => {
+      const text = "one\ntwo\nthree";
+      const result = indent(text, 1, 10); // inside "one" .. inside "three"
+      expect(result.text).toBe("  one\n  two\n  three");
+      expect(result.text.slice(result.selectionStart, result.selectionEnd)).toBe("ne\n  two\n  th");
+    });
+  });
+
+  describe("outdent (Shift+Tab)", () => {
+    it("strips up to two leading spaces from the caret's line", () => {
+      const result = outdent("    code", 6, 6);
+      expect(result.text).toBe("  code");
+      expect(result.selectionStart).toBe(4);
+      expect(result.selectionEnd).toBe(4);
+    });
+
+    it("strips a single leading tab", () => {
+      const result = outdent("\tcode", 3, 3);
+      expect(result.text).toBe("code");
+      expect(result.selectionStart).toBe(2);
+    });
+
+    it("leaves a line with no indent unchanged", () => {
+      const result = outdent("code", 2, 2);
+      expect(result.text).toBe("code");
+      expect(result.selectionStart).toBe(2);
+    });
+
+    it("outdents every touched line and clamps the selection to line starts", () => {
+      const text = "  one\n  two\n  three";
+      const result = outdent(text, 0, text.length);
+      expect(result.text).toBe("one\ntwo\nthree");
+      expect(result.selectionStart).toBe(0);
+      expect(result.text.slice(result.selectionStart, result.selectionEnd)).toBe("one\ntwo\nthree");
+    });
+
+    it("only strips lines that are indented in a mixed block", () => {
+      const text = "  a\nb\n  c";
+      const result = outdent(text, 0, text.length);
+      expect(result.text).toBe("a\nb\nc");
+    });
+  });
+
+  describe("indent / outdent round-trip", () => {
+    it("indent then outdent restores the original multi-line block", () => {
+      const original = "one\ntwo\nthree";
+      const indented = indent(original, 0, original.length);
+      const reverted = outdent(indented.text, indented.selectionStart, indented.selectionEnd);
+      expect(reverted.text).toBe(original);
     });
   });
 

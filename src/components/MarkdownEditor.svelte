@@ -1,6 +1,6 @@
 <script lang="ts">
   import { tick } from 'svelte';
-  import { applyFormat, type FormatAction } from '../lib/markdown/format';
+  import { applyFormat, indent, outdent, type FormatAction, type FormatResult } from '../lib/markdown/format';
   import { selectRangeInTextarea } from '../lib/search/highlight';
 
   let {
@@ -48,12 +48,10 @@
     return a.key ? `${a.label} (Cmd/Ctrl+${a.key.toUpperCase()})` : a.label;
   }
 
-  /** Apply a formatting action at the current selection, respecting the char cap. */
-  async function run(action: FormatAction) {
-    if (!textarea) return;
-    const result = applyFormat(value, textarea.selectionStart, textarea.selectionEnd, action);
+  /** Write a computed edit back into the textarea, respecting the char cap. */
+  async function applyResult(result: FormatResult) {
     // Programmatic `bind:value` writes bypass the textarea's `maxlength`, so the
-    // toolbar/shortcuts would otherwise be a backdoor around the char cap — no-op instead.
+    // toolbar/shortcuts/Tab would otherwise be a backdoor around the char cap — no-op instead.
     if (maxlength !== undefined && result.text.length > maxlength) return;
 
     value = result.text;
@@ -64,11 +62,30 @@
     selectRangeInTextarea(textarea, result.selectionStart, result.selectionEnd);
   }
 
+  /** Apply a formatting action at the current selection. */
+  async function run(action: FormatAction) {
+    if (!textarea) return;
+    await applyResult(applyFormat(value, textarea.selectionStart, textarea.selectionEnd, action));
+  }
+
+  /** Apply a pure indent/outdent transform at the current selection. */
+  async function runEdit(transform: (text: string, start: number, end: number) => FormatResult) {
+    if (!textarea) return;
+    await applyResult(transform(value, textarea.selectionStart, textarea.selectionEnd));
+  }
+
   const SHORTCUT_ACTIONS: Record<string, FormatAction> = { b: 'bold', i: 'italic', k: 'link' };
 
   // Scoped to the textarea (not `window`) so it only fires while the editor has
   // focus and can't clash with the global Cmd/Ctrl+/ search shortcut in App.svelte.
   function onKeydown(e: KeyboardEvent) {
+    // Tab indents (Shift+Tab outdents) instead of moving focus out of the editor —
+    // notes are code-like, so an in-place 2-space indent beats losing the caret.
+    if (e.key === 'Tab' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      e.preventDefault();
+      void runEdit(e.shiftKey ? outdent : indent);
+      return;
+    }
     if (!(e.metaKey || e.ctrlKey)) return;
     const action = SHORTCUT_ACTIONS[e.key.toLowerCase()];
     if (!action) return;
