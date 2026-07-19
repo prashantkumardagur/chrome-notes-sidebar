@@ -89,6 +89,14 @@
     pendingHighlight = null;
   }
 
+  // Run on a user View/Edit toggle (tab click or the toggle-view shortcut): drop any
+  // jump-to-match highlight, and — when switching into Edit — move focus into the
+  // textarea so the user can start typing without a second click.
+  function onModeToggle() {
+    clearPendingHighlight();
+    if (mode === 'edit') void focusEditor();
+  }
+
   // Keep the document theme in sync with the preference.
   $effect(() => applyTheme(settings.theme));
 
@@ -438,8 +446,8 @@
           break;
         case 'toggle-view':
           mode = mode === 'edit' ? 'view' : 'edit';
-          // Mirror the View/Edit tabs, which drop any jump-to-match highlight on toggle.
-          clearPendingHighlight();
+          // Same as clicking the View/Edit tabs: drop any highlight + focus the editor in Edit.
+          onModeToggle();
           break;
         case 'new-note':
           void createNote({ rename: false });
@@ -501,7 +509,7 @@
       {renameSignal}
       {deleteSignal}
     />
-    <ViewEditTabs bind:mode onchange={clearPendingHighlight} />
+    <ViewEditTabs bind:mode onchange={onModeToggle} />
   </header>
 
   <main class="content">

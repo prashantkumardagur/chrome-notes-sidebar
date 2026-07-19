@@ -10,7 +10,8 @@ ours**. Interaction model = Google Tasks, but for notes.
   Creating from the **New note** button opens the name in rename mode (with the text preselected);
   the new-note **shortcut** keeps "Untitled" and drops the cursor straight into the editor. Finishing a
   rename (Enter / ✓) returns focus to the editor when in Edit mode.
-- **Markdown** editor with **View / Edit** tabs; View renders sanitized **GFM** (headings,
+- **Markdown** editor with **View / Edit** tabs; switching into Edit (tab or the toggle shortcut)
+  drops focus straight into the textarea to start typing. View renders sanitized **GFM** (headings,
   emphasis, lists, links, code, tables, task lists) with syntax-highlighted fenced code for an
   explicit language; raw embedded HTML shows as plain text. Task-list checkboxes are **tickable in
   View mode** — clicking one flips `[ ]`↔`[x]` in the note and autosaves.
