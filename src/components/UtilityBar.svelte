@@ -32,6 +32,23 @@
   const words = $derived(wordCount(body));
   const lines = $derived(lineCount(body));
 
+  // Static GFM syntax reference for the info popover — covers exactly the Markdown
+  // the renderer supports (src/lib/markdown/render.ts). Reference only; the `syntax`
+  // strings are shown as literal text (not rendered), so keep them one line each.
+  const cheatRows: { syntax: string; label: string }[] = [
+    { syntax: '# Heading', label: 'Heading' },
+    { syntax: '**bold**', label: 'Bold' },
+    { syntax: '*italic*', label: 'Italic' },
+    { syntax: '`code`', label: 'Inline code' },
+    { syntax: '```', label: 'Code block' },
+    { syntax: '- item', label: 'Bullet list' },
+    { syntax: '1. item', label: 'Numbered list' },
+    { syntax: '- [ ] task', label: 'Task list' },
+    { syntax: '[text](url)', label: 'Link' },
+    { syntax: '> quote', label: 'Blockquote' },
+    { syntax: '| a | b |', label: 'Table' },
+  ];
+
   // ⌘ on macOS, Ctrl elsewhere — detected once per component instance (platform doesn't change mid-session).
   const mac = /Mac/i.test(navigator.platform);
 
@@ -139,13 +156,25 @@
         <dd>{version}</dd>
       </dl>
 
-      <details class="shortcuts">
+      <details class="section shortcuts">
         <summary>Keyboard shortcuts</summary>
         <ul>
           {#each shortcutRows as row (row.action)}
             <li>
               <kbd>{row.keys}</kbd>
               <span>{row.action}</span>
+            </li>
+          {/each}
+        </ul>
+      </details>
+
+      <details class="section cheatsheet">
+        <summary>Markdown cheat sheet</summary>
+        <ul>
+          {#each cheatRows as row (row.label)}
+            <li>
+              <code>{row.syntax}</code>
+              <span>{row.label}</span>
             </li>
           {/each}
         </ul>
@@ -243,19 +272,21 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .shortcuts {
+  /* Collapsible popover sections (keyboard shortcuts, Markdown cheat sheet) share
+     one layout; each is separated from what precedes it by a top divider. */
+  .section {
     margin-top: 8px;
     border-top: 1px solid var(--border);
     padding-top: 6px;
   }
 
-  .shortcuts summary {
+  .section summary {
     cursor: pointer;
     color: var(--text-muted);
     font-size: 12px;
   }
 
-  .shortcuts ul {
+  .section ul {
     list-style: none;
     margin: 6px 0 0;
     padding: 0;
@@ -264,20 +295,21 @@
     gap: 4px;
   }
 
-  .shortcuts li {
+  .section li {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
   }
 
-  .shortcuts li span {
+  .section li span {
     color: var(--text-muted);
     font-size: 12px;
   }
 
-  .shortcuts kbd {
-    font-family: inherit;
+  /* Shared chip styling for shortcut keys and cheat-sheet syntax samples. */
+  .shortcuts kbd,
+  .cheatsheet code {
     font-size: 11px;
     color: var(--text);
     background: var(--code-bg);
@@ -285,5 +317,14 @@
     border-radius: 4px;
     padding: 1px 6px;
     white-space: nowrap;
+  }
+
+  .shortcuts kbd {
+    font-family: inherit;
+  }
+
+  /* Syntax samples are code — show them monospace, matching the note view. */
+  .cheatsheet code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   }
 </style>

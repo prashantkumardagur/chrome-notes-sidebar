@@ -17,8 +17,6 @@ Each has a self-contained spec in this directory:
   the notes dropdown — no dependency on the settings-page revamp.)
 * [Editor preferences](./editor-preferences.md) — font size, line spacing, editor font (mono/sans),
   and word-wrap, added to the settings UI; synced.
-* [Markdown cheat sheet](./markdown-cheat-sheet.md) — a collapsible GFM syntax reference in the ⓘ info
-  popover.
 * [More keyboard shortcuts](./more-shortcuts.md) — in-panel shortcuts for the common actions
   (toggle view/settings/info, new note, cycle notes) behind one keymap; folds in the existing search
   shortcut.
