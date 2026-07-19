@@ -44,6 +44,7 @@ src/
     util/time.ts               relative "last edited" formatting
     notes/title.ts             default/normalized note titles
     notes/stats.ts             pure word/line count for the info popover
+    shortcuts/shortcuts.ts     pure shortcut-row builder for the info popover's shortcuts reference
 tests/                         Vitest, mirrors src/ (one spec per meaningful module)
 ```
 

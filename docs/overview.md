@@ -11,7 +11,8 @@ ours**. Interaction model = Google Tasks, but for notes.
   emphasis, lists, links, code, tables, task lists); raw embedded HTML shows as plain text.
 - **Autosave** to `chrome.storage.sync`, 3s debounced — cross-device, no account.
 - **Per-note character budget** with a live `used/limit` counter and a save-state dot (Saving / Saved).
-- **Note info popover** (ⓘ) with last-edited time, character/word/line counts, and note usage.
+- **Note info popover** (ⓘ) with last-edited time, character/word/line counts, note usage, and a
+  collapsible keyboard-shortcuts reference (toggle panel — live rebound key, Search, Close surface).
 - **Cross-note search** (🔍 in the note actions, or Cmd/Ctrl+`/`): live regex search over every
   note's body (case-insensitive by default, with an `Aa` match-case toggle), results grouped by note;
   click a result to open that note and jump to the match (selected in Edit mode, highlighted +
