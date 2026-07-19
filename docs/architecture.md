@@ -29,7 +29,10 @@ src/
     SettingsPanel.svelte    settings page: theme + view-on-switch + editor prefs (font size,
                             line spacing, editor font, word wrap) + backup export/import
                             (opened via the footer gear; replaces the editor area, like search)
-    SearchPanel.svelte      search mode: input + grouped/emphasized results (replaces the editor area)
+    SearchPanel.svelte      search mode: input + grouped/emphasized results (replaces the editor area);
+                            ↓ from the input jumps to the first result, ↑/↓ move between results
+                            (skipping collapsed groups), ↑ from the first returns to the input — the
+                            focused row carries the same accent highlight as OrganizeNotes' current row
     OrganizeNotes.svelte    organize page: sort-field selector (Manual / Title A–Z / Last edited) +
                             reorderable note list (drag + keyboard in Manual, locked in auto modes);
                             replaces the editor area, like search
@@ -46,7 +49,8 @@ src/
                                resolveEditorVars (prefs → --editor-*/--content-* CSS vars) + applyEditorVars
     commands/panelToggle.ts    keyboard-command handler (toggles the side panel open/closed)
     search/
-      search.ts                pure body-only regex search (case toggle, offsets + line snippets, iteration guard)
+      search.ts                pure body-only regex search (case toggle, offsets + line snippets, iteration guard);
+                               flattenSearchRows() flattens visible results into keyboard-nav order
       highlight.ts             jump-to-match: textarea select (edit) + rendered-DOM <mark>s (view)
       searchState.ts           search-UI session state type + normalize
       SessionSearchStateRepository.ts  chrome.storage.session store (restores search on panel reopen)

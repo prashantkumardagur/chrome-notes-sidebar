@@ -169,3 +169,28 @@ export function searchNotes(query: string, notes: Note[], options: SearchOptions
   }
   return { results, error: null };
 }
+
+/** A single navigable result row, tied to one occurrence in one note. */
+export interface SearchRowRef {
+  noteId: string;
+  /** Index of the occurrence within its note's `matches` (the `onOpen` target). */
+  matchIndex: number;
+  /** Stable focus/highlight key — `${noteId}:${match.start}`, unique across results. */
+  key: string;
+}
+
+/**
+ * Flatten result groups into their top-to-bottom navigation order. Collapsed
+ * groups contribute no rows (their occurrences aren't rendered), so arrow-key
+ * navigation only visits rows the user can actually see.
+ */
+export function flattenSearchRows(results: NoteSearchResult[], collapsed: ReadonlySet<string>): SearchRowRef[] {
+  const rows: SearchRowRef[] = [];
+  for (const result of results) {
+    if (collapsed.has(result.id)) continue;
+    result.matches.forEach((match, matchIndex) => {
+      rows.push({ noteId: result.id, matchIndex, key: `${result.id}:${match.start}` });
+    });
+  }
+  return rows;
+}
