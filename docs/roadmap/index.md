@@ -9,8 +9,6 @@ sub-points.
 
 Each has a self-contained spec in this directory:
 
-* [Interactive task lists](./interactive-task-lists.md) — tick `- [ ]`/`- [x]` checkboxes in View
-  mode, writing back to the note.
 * [Organize notes: sort + reorder](./organize-notes.md) — a dedicated surface to sort notes
   (Manual / Title A–Z / Last edited) and manually reorder (drag + keyboard). Covers the old "Reorder
   notes" and "Sort notes" items. (Adds a `sortMode` field to synced settings **data**, but its UI is in

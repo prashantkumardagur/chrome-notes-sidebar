@@ -6,12 +6,16 @@
     source = '',
     highlight = null,
     onDismissHighlight,
+    onToggleTask,
   }: {
     source: string;
     // Set when a note is opened from a search result in View mode: highlight every
     // occurrence of `query` and scroll to the one nearest the clicked occurrence.
     highlight?: { query: string; nearestIndex: number } | null;
     onDismissHighlight?: () => void;
+    // Clicking the Nth (document-order) task-list checkbox reports its index so App
+    // can flip the matching source marker and autosave.
+    onToggleTask?: (index: number) => void;
   } = $props();
   const html = $derived(renderMarkdown(source));
 
@@ -23,6 +27,31 @@
   $effect(() => {
     html;
     if (highlight && viewEl) highlightMatchesInView(viewEl, highlight.query, highlight.nearestIndex);
+  });
+
+  // Make genuine task-list checkboxes clickable. Reruns on every `html` change so the
+  // listeners always match the freshly reassigned innerHTML (old nodes/listeners are
+  // discarded with the previous DOM). Scoped to the two shapes `marked` emits for a task
+  // item: `li > input` (tight list) and `li > p > input` (loose list — produced when a
+  // blank line separates items). querySelectorAll returns document order, so the index
+  // still lines up with the source task markers the toggle walks.
+  $effect(() => {
+    html;
+    if (!viewEl || !onToggleTask) return;
+    const boxes = viewEl.querySelectorAll<HTMLInputElement>(
+      'li > input[type="checkbox"], li > p > input[type="checkbox"]',
+    );
+    boxes.forEach((box, index) => {
+      box.removeAttribute('disabled');
+      // Listen on `click` (not `change`) so stopPropagation keeps the same click from
+      // bubbling to the container's dismiss() and clearing search highlights — the
+      // container's own handler is `onclick`. The box's visual state is overwritten by
+      // the re-render from the source change anyway.
+      box.addEventListener('click', (e) => {
+        e.stopPropagation();
+        onToggleTask(index);
+      });
+    });
   });
 
   // Any click in the note dismisses the highlights and tells App to drop the
@@ -183,6 +212,27 @@
 
   .markdown-body :global(img) {
     max-width: 100%;
+  }
+
+  /* Task-list items read as a checkbox + text with no bullet marker (GitHub-style) —
+     the checkbox is the marker. Covers both the tight (li > input) and loose
+     (li > p > input, when a blank line separates items) shapes marked emits. */
+  .markdown-body :global(li:has(> input[type="checkbox"])),
+  .markdown-body :global(li:has(> p > input[type="checkbox"])) {
+    list-style: none;
+  }
+
+  .markdown-body :global(li > input[type="checkbox"]),
+  .markdown-body :global(li > p > input[type="checkbox"]) {
+    margin: 0 0.4em 0 0;
+    vertical-align: middle;
+  }
+
+  /* A blank line makes a list "loose", wrapping each item's text in a <p> with block
+     margins — which would space task groups apart unevenly. Collapse that margin so a
+     blank-line-separated task list reads like a single tight checklist. */
+  .markdown-body :global(li:has(> p > input[type="checkbox"]) > p) {
+    margin: 0;
   }
 
   /* Jump-to-match highlights from a search result. Other occurrences get a muted

@@ -17,7 +17,8 @@ src/
     ViewEditTabs.svelte     View / Edit switch
     MarkdownEditor.svelte   markdown textarea (enforces maxlength) + thin formatting toolbar
                             (bold/italic/link/code/heading/list, Cmd/Ctrl+B/I/K)
-    MarkdownView.svelte     renders sanitized GFM (+ syntax-highlighted fenced code)
+    MarkdownView.svelte     renders sanitized GFM (+ syntax-highlighted fenced code); makes
+                            task-list checkboxes tickable → onToggleTask(index) up to App
     CharCounter.svelte      used/limit counter, warns near cap
     UtilityBar.svelte       bottom-left tools: copy-all + info popover
     SettingsPanel.svelte    settings page: theme + view-on-switch prefs + backup export/import
@@ -41,6 +42,7 @@ src/
       SessionSearchStateRepository.ts  chrome.storage.session store (restores search on panel reopen)
     markdown/
       render.ts         GFM -> sanitized HTML (+ highlight.js highlighting; curated language list in-file)
+      tasks.ts          pure toggle of the Nth task-list marker (View-mode checkbox click writes back)
       format.ts         pure text transforms for the toolbar (wrap/unwrap, line-prefix)
     ui/surfaces.ts             single-active-surface coordination — which transient popover/search page is open
     util/debounce.ts           trailing-edge debounce (autosave)

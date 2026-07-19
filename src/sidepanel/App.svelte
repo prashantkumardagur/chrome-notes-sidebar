@@ -9,6 +9,7 @@
   import UtilityBar from '../components/UtilityBar.svelte';
   import ViewEditTabs from '../components/ViewEditTabs.svelte';
   import { backupFileName, buildBackup, parseBackup, serializeBackup } from '../lib/backup/backup';
+  import { toggleTaskAtIndex } from '../lib/markdown/tasks';
   import { nextUntitledTitle, normalizeTitle } from '../lib/notes/title';
   import type { NoteMatch } from '../lib/search/search';
   import { SessionSearchStateRepository } from '../lib/search/SessionSearchStateRepository';
@@ -123,6 +124,14 @@
     pendingSelect = null;
     status = 'saving';
     scheduleSave();
+  }
+
+  // Ticking a task checkbox in View mode: flip the matching source marker, then run the
+  // same edit path as typing so the change renders and autosaves (a 1-char swap never
+  // approaches the char cap, so no budget guard is needed).
+  function toggleTask(index: number) {
+    body = toggleTaskAtIndex(body, index);
+    onEdit();
   }
 
   async function selectNote(id: string) {
@@ -374,7 +383,12 @@
     {:else if mode === 'edit'}
       <MarkdownEditor bind:value={body} oninput={onEdit} maxlength={MAX_NOTE_CHARS} select={pendingSelect} />
     {:else}
-      <MarkdownView source={body} highlight={pendingHighlight} onDismissHighlight={clearPendingHighlight} />
+      <MarkdownView
+        source={body}
+        highlight={pendingHighlight}
+        onDismissHighlight={clearPendingHighlight}
+        onToggleTask={toggleTask}
+      />
     {/if}
   </main>
 
