@@ -35,8 +35,9 @@ ours**. Interaction model = Google Tasks, but for notes.
   reference for the supported syntax) — both shown as always-visible sections.
 - **Cross-note search** (🔍 in the note actions, or Cmd/Ctrl+`/`): live regex search over every
   note's body (case-insensitive by default, with an `Aa` match-case toggle), results grouped by note;
-  click a result to open that note and jump to the match (selected in Edit mode, highlighted +
-  scrolled to in View mode).
+  click a result — or arrow to it and press Enter — to open that note and jump to the match (selected
+  in Edit mode, highlighted + scrolled to in View mode). Keyboard: ↓ from the search box enters the
+  results, ↑/↓ move between them, and ↑ from the first result returns to the search box.
 - **Organize notes** ("Organize notes" in the dropdown): a dedicated page to pick a sort field —
   **Manual** (custom order), **Title (A–Z)**, or **Last edited** — and, in Manual mode, reorder notes
   by drag-and-drop or keyboard (↑/↓ to move focus, Shift+↑/↓ to move a note). The choice is synced;

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import {
+    flattenSearchRows,
     MAX_OCCURRENCES_PER_NOTE,
     MIN_QUERY_LENGTH,
     type NoteMatch,
@@ -35,6 +36,31 @@
   let applied = $state(query);
   let input: HTMLInputElement;
 
+  // The result row that currently holds the keyboard highlight (its stable key), or
+  // null when focus is in the search box. Mirrors OrganizeNotes' `current` highlight.
+  let currentKey = $state<string | null>(null);
+  const rowEls = new Map<string, HTMLElement>();
+
+  // Register each rendered row element by key so keyboard nav can move focus between rows.
+  function registerRow(el: HTMLElement, key: string) {
+    rowEls.set(key, el);
+    return {
+      update(nextKey: string) {
+        rowEls.delete(key);
+        key = nextKey;
+        rowEls.set(key, el);
+      },
+      destroy() {
+        rowEls.delete(key);
+      },
+    };
+  }
+
+  function focusRow(key: string) {
+    currentKey = key;
+    rowEls.get(key)?.focus();
+  }
+
   const applyQuery = debounce(() => {
     applied = query;
   }, DEBOUNCE_MS);
@@ -47,6 +73,35 @@
     if (e.key === 'Escape') {
       e.preventDefault();
       onClose();
+      return;
+    }
+    // Down from the search box drops into the first visible result.
+    if (e.key === 'ArrowDown' && flatRows.length > 0) {
+      e.preventDefault();
+      focusRow(flatRows[0].key);
+    }
+  }
+
+  function onRowKeydown(e: KeyboardEvent, key: string) {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      onClose();
+      return;
+    }
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+    e.preventDefault();
+    const i = flatRows.findIndex((row) => row.key === key);
+    if (i === -1) return;
+    if (e.key === 'ArrowUp') {
+      // Up from the first result returns focus to the search box; otherwise move up one.
+      if (i === 0) {
+        currentKey = null;
+        input?.focus();
+      } else {
+        focusRow(flatRows[i - 1].key);
+      }
+    } else if (i < flatRows.length - 1) {
+      focusRow(flatRows[i + 1].key);
     }
   }
 
@@ -72,6 +127,18 @@
   const outcome = $derived(searchNotes(applied, notes, { caseSensitive }));
   const results = $derived<NoteSearchResult[]>(outcome.results);
   const searchError = $derived(outcome.error);
+
+  // Visible rows in top-to-bottom order — the arrow-key navigation sequence.
+  const flatRows = $derived(flattenSearchRows(results, collapsed));
+
+  // Drop the highlight when the visible rows change (new query / toggled group),
+  // so a stale key can't keep an unfocused row lit.
+  $effect(() => {
+    void flatRows;
+    if (currentKey !== null && !flatRows.some((row) => row.key === currentKey)) {
+      currentKey = null;
+    }
+  });
 </script>
 
 <div class="search">
@@ -127,7 +194,16 @@
           </button>
           {#if !isCollapsed}
             {#each result.matches as match, i (match.start)}
-              <button type="button" class="row" onclick={() => onOpen(result.id, match, i)}>
+              {@const key = `${result.id}:${match.start}`}
+              <button
+                type="button"
+                class="row"
+                class:current={currentKey === key}
+                use:registerRow={key}
+                onclick={() => onOpen(result.id, match, i)}
+                onfocus={() => (currentKey = key)}
+                onkeydown={(e) => onRowKeydown(e, key)}
+              >
                 <!-- Snippet is *raw* untrusted note text: slice around the match and put
                      the emphasis in its own element — never {@html}. -->
                 <span class="snippet"
@@ -228,7 +304,7 @@
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    padding: 6px 0;
+    padding: 6px 8px;
   }
 
   .hint {
@@ -262,7 +338,7 @@
     border: none;
     background: transparent;
     text-align: left;
-    padding: 8px 12px 2px;
+    padding: 8px 8px 2px;
     font: inherit;
     font-size: 11px;
     font-weight: 600;
@@ -304,18 +380,31 @@
     display: block;
     width: 100%;
     appearance: none;
-    border: none;
+    /* Transparent border reserves the space the accent highlight fills — no shift. */
+    border: 1px solid transparent;
+    border-radius: 6px;
     background: transparent;
     color: var(--text);
     font: inherit;
     font-size: 13px;
     text-align: left;
-    padding: 5px 12px;
+    padding: 5px 8px;
     cursor: pointer;
   }
 
   .row:hover {
     background: var(--bg-subtle);
+  }
+
+  /* Keyboard highlight on the current row — matches OrganizeNotes' `.row.current`. */
+  .row.current {
+    background: var(--bg-subtle);
+    border-color: var(--accent);
+  }
+
+  .row:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
   }
 
   .snippet {
@@ -334,7 +423,7 @@
 
   .more {
     margin: 0;
-    padding: 2px 12px 6px;
+    padding: 2px 8px 6px;
     color: var(--text-muted);
     font-size: 11px;
     font-style: italic;

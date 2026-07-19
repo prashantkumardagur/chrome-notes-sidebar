@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   compileQuery,
+  flattenSearchRows,
   MAX_OCCURRENCES_PER_NOTE,
   MIN_QUERY_LENGTH,
   type SearchOptions,
@@ -234,5 +235,33 @@ describe("searchNotes", () => {
     const notes = [note("1", "Empty", ""), note("2", "B", "some text")];
     expect(searchNotes("zzz", notes)).toEqual({ results: [], error: null });
     expect(run("some", notes).map((r) => r.id)).toEqual(["2"]);
+  });
+});
+
+describe("flattenSearchRows", () => {
+  it("flattens groups into top-to-bottom order with stable per-occurrence keys", () => {
+    const notes = [note("2", "Second", "has apple inside"), note("3", "Third", "apple again apple")];
+    const results = searchNotes("apple", notes).results;
+    const rows = flattenSearchRows(results, new Set());
+    expect(rows.map((r) => r.noteId)).toEqual(["2", "3", "3"]);
+    expect(rows.map((r) => r.matchIndex)).toEqual([0, 0, 1]);
+    // Keys are `${noteId}:${match.start}` and unique across the flattened list.
+    expect(rows.map((r) => r.key)).toEqual([
+      `2:${results[0].matches[0].start}`,
+      `3:${results[1].matches[0].start}`,
+      `3:${results[1].matches[1].start}`,
+    ]);
+    expect(new Set(rows.map((r) => r.key)).size).toBe(rows.length);
+  });
+
+  it("omits rows for collapsed groups (their occurrences aren't rendered)", () => {
+    const notes = [note("2", "Second", "has apple inside"), note("3", "Third", "apple again apple")];
+    const results = searchNotes("apple", notes).results;
+    const rows = flattenSearchRows(results, new Set(["2"]));
+    expect(rows.map((r) => r.noteId)).toEqual(["3", "3"]);
+  });
+
+  it("returns an empty list when there are no results", () => {
+    expect(flattenSearchRows([], new Set())).toEqual([]);
   });
 });
