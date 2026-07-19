@@ -21,6 +21,13 @@ export type LineSpacing = "comfortable" | "compact";
 /** Font family for the Edit textarea only (View keeps its own typographic styles). */
 export type EditorFont = "mono" | "sans";
 
+/**
+ * How the notes list is ordered. `manual` is the user's custom drag/keyboard order
+ * (today's default — index order); `title` is A–Z; `updated` is last-edited first.
+ * An auto-sort field rewrites the stored `notes:index` order (see the Organize surface).
+ */
+export type SortMode = "manual" | "title" | "updated";
+
 export interface Settings {
   theme: ThemePref;
   /**
@@ -40,6 +47,8 @@ export interface Settings {
   editorFont?: EditorFont;
   /** Soft-wrap long lines in the Edit textarea. Default `true`. */
   wordWrap?: boolean;
+  /** How the notes list is ordered. Default `manual` (omitted when manual). */
+  sortMode?: SortMode;
 }
 
 export const DEFAULT_SETTINGS: Settings = { theme: "system", view: "persistent" };
@@ -50,12 +59,14 @@ export const DEFAULT_FONT_SIZE: FontSize = "md";
 export const DEFAULT_LINE_SPACING: LineSpacing = "comfortable";
 export const DEFAULT_EDITOR_FONT: EditorFont = "mono";
 export const DEFAULT_WORD_WRAP = true;
+export const DEFAULT_SORT_MODE: SortMode = "manual";
 
 const THEME_PREFS: readonly ThemePref[] = ["system", "light", "dark"];
 const VIEW_PREFS: readonly ViewPref[] = ["persistent", "edit", "view"];
 const FONT_SIZES: readonly FontSize[] = ["sm", "md", "lg"];
 const LINE_SPACINGS: readonly LineSpacing[] = ["comfortable", "compact"];
 const EDITOR_FONTS: readonly EditorFont[] = ["mono", "sans"];
+const SORT_MODES: readonly SortMode[] = ["manual", "title", "updated"];
 
 /**
  * Merge stored (possibly partial or corrupt) settings with defaults, dropping any
@@ -83,6 +94,11 @@ export function normalizeSettings(raw: Partial<Settings> | null | undefined): Se
   }
   if (typeof raw?.wordWrap === "boolean" && raw.wordWrap !== DEFAULT_WORD_WRAP) {
     result.wordWrap = raw.wordWrap;
+  }
+  // Sort mode: carry a valid non-default value, omit `manual`/invalid/absent so the
+  // stored object stays a clean { theme, view } at the default (same rule as above).
+  if (raw?.sortMode && SORT_MODES.includes(raw.sortMode) && raw.sortMode !== DEFAULT_SORT_MODE) {
+    result.sortMode = raw.sortMode;
   }
   return result;
 }

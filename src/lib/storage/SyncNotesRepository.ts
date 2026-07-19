@@ -89,6 +89,18 @@ export class SyncNotesRepository implements NotesRepository {
     for (const meta of stale) await this.area.remove(noteKey(meta.id));
   }
 
+  async reorder(orderedIds: string[]): Promise<void> {
+    const index = await this.list();
+    const byId = new Map(index.map((m) => [m.id, m]));
+    // Take the metas named by orderedIds (skipping unknown ids), in that order.
+    const ordered = orderedIds.map((id) => byId.get(id)).filter((m): m is NoteMeta => m !== undefined);
+    // Keep any index metas the caller didn't mention, appended in their existing
+    // relative order, so a note created/deleted elsewhere is never dropped.
+    const named = new Set(ordered.map((m) => m.id));
+    const rest = index.filter((m) => !named.has(m.id));
+    await this.writeIndex([...ordered, ...rest]);
+  }
+
   async firstOrCreate(): Promise<Note> {
     const index = await this.list();
     if (index.length > 0) {

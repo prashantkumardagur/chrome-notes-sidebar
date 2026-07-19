@@ -27,10 +27,13 @@ src/
                             line spacing, editor font, word wrap) + backup export/import
                             (opened via the footer gear; replaces the editor area, like search)
     SearchPanel.svelte      search mode: input + grouped/emphasized results (replaces the editor area)
+    OrganizeNotes.svelte    organize page: sort-field selector (Manual / Title A–Z / Last edited) +
+                            reorderable note list (drag + keyboard in Manual, locked in auto modes);
+                            replaces the editor area, like search
   lib/
     backup/backup.ts          build/serialize/parse a full notes+settings JSON backup
     storage/
-      NotesRepository.ts       interface — the notes storage seam
+      NotesRepository.ts       interface — the notes storage seam (incl. reorder(orderedIds))
       SyncNotesRepository.ts   chrome.storage.sync implementation
       limits.ts                all caps + byte/char math
     settings/
@@ -48,11 +51,13 @@ src/
       render.ts         GFM -> sanitized HTML (+ highlight.js highlighting; curated language list in-file)
       tasks.ts          pure toggle of the Nth task-list marker (View-mode checkbox click writes back)
       format.ts         pure text transforms for the toolbar (wrap/unwrap, line-prefix)
-    ui/surfaces.ts             single-active-surface coordination — which transient popover/search page is open
+    ui/surfaces.ts             single-active-surface coordination — which transient popover/page is open
+                               (dropdown / settings / info / search / organize)
     util/debounce.ts           trailing-edge debounce (autosave)
     util/time.ts               relative "last edited" formatting
     notes/title.ts             default/normalized note titles
     notes/stats.ts             pure word/line count for the info popover
+    notes/sort.ts              pure ordering of note metas by sort mode (manual/title/updated)
     shortcuts/shortcuts.ts     pure shortcut-row builder for the info popover's shortcuts reference
 tests/                         Vitest, mirrors src/ (one spec per meaningful module)
 ```
@@ -78,8 +83,9 @@ tests/                         Vitest, mirrors src/ (one spec per meaningful mod
 `chrome.storage.sync` (durable, cross-device):
 - `notes:index` → ordered `NoteMeta[]` (`{id, title, updatedAt}`).
 - `note:<id>` → one full `Note` per note.
-- `settings` → `{ theme, view }` plus optional, default-omitted fields (`lastNoteId`, and the
-  editor prefs `fontSize`/`lineSpacing`/`editorFont`/`wordWrap`) — see `settings.ts`.
+- `settings` → `{ theme, view }` plus optional, default-omitted fields (`lastNoteId`, `sortMode`,
+  and the editor prefs `fontSize`/`lineSpacing`/`editorFont`/`wordWrap`) — see `settings.ts`. When
+  `sortMode` is an auto field (`title`/`updated`), App keeps `notes:index` rewritten to that order.
 
 `chrome.storage.session` (in-memory, per browser session):
 - `search:state` → `{ active, query, collapsed[], caseSensitive }` — the search page to restore on panel reopen.
@@ -87,7 +93,7 @@ tests/                         Vitest, mirrors src/ (one spec per meaningful mod
 ## UI layout contract (don't drift)
 - **Top:** note selector (left) + View / Edit tabs (right).
 - **Middle:** Markdown textarea (Edit) or rendered GFM (View) — or, while a transient surface is
-  active, that surface's full-page content (search results, settings) replacing the editor/view.
+  active, that surface's full-page content (search results, settings, organize) replacing the editor/view.
   Edit adds a thin formatting toolbar row above the textarea (bold/italic/link/code/heading/list;
   `Cmd/Ctrl+B/I/K`), scoped to `MarkdownEditor.svelte` — not shown in View.
 - **Bottom-left:** tools (copy-all, info popover) + a standalone settings gear (toggles the

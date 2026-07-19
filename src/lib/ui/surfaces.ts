@@ -1,5 +1,5 @@
 /** The transient surfaces that must be mutually exclusive (only one open at a time). */
-export type Surface = "dropdown" | "settings" | "info" | "search";
+export type Surface = "dropdown" | "settings" | "info" | "search" | "organize";
 
 /**
  * Next open surface after one toggles. Opening a surface closes any other; closing a

@@ -39,6 +39,13 @@ export interface NotesRepository {
   firstOrCreate(): Promise<Note>;
   /** Replace the entire note set (e.g. restoring a backup), dropping anything not in `notes`. */
   replaceAll(notes: Note[]): Promise<void>;
+  /**
+   * Reorder the index to match `orderedIds`. Order lives only in the index — the
+   * `note:<id>` items are untouched. Ids not in the current index are ignored;
+   * any index metas missing from `orderedIds` are kept, appended in their existing
+   * relative order (defensive, so a note is never lost on a stale id set).
+   */
+  reorder(orderedIds: string[]): Promise<void>;
 }
 
 export function toMeta(note: Note): NoteMeta {
