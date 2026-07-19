@@ -12,6 +12,7 @@ export type ShortcutAction =
   | "toggle-info"
   | "toggle-view"
   | "new-note"
+  | "rename-note"
   | "prev-note"
   | "next-note";
 
@@ -31,6 +32,7 @@ export const BINDINGS: readonly Binding[] = [
   { code: "Comma", shift: false, action: "toggle-settings" },
   { code: "Period", shift: false, action: "toggle-info" },
   { code: "KeyA", shift: true, action: "new-note" },
+  { code: "KeyR", shift: true, action: "rename-note" },
   { code: "Comma", shift: true, action: "prev-note" },
   { code: "Period", shift: true, action: "next-note" },
 ];
