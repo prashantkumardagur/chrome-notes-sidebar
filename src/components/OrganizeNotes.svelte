@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import type { SortMode } from '../lib/settings/settings';
   import type { NoteMeta } from '../lib/storage/NotesRepository';
 
@@ -26,10 +27,14 @@
   // Reorder is only allowed in manual mode; auto modes derive the order from a field.
   const isManual = $derived(sortMode === 'manual');
 
-  // Roving-tabindex focus target: the one row that's tab-focusable. Because rows are
-  // keyed by id, a focused node keeps DOM focus across a reorder, so we only track the
-  // id here to keep the roving tabindex correct.
+  // Roving-tabindex + highlight target. `focusedId` is the row the user last landed on;
+  // `currentId` falls back to the first row so there's always a highlighted, keyboard-
+  // ready row in manual mode (no click required).
   let focusedId = $state<string | null>(null);
+  const currentId = $derived<string | null>(focusedId ?? notes[0]?.id ?? null);
+  // Set before a reorder so an effect re-focuses the moved row once the (async) parent
+  // update lands — Svelte's keyed reconcile doesn't reliably preserve DOM focus on a move.
+  let pendingRefocus = $state(false);
   // The row currently being dragged, and the row a drag is hovering over (for the
   // drop indicator). Both cleared on dragend/drop.
   let dragId = $state<string | null>(null);
@@ -42,6 +47,42 @@
     rowEls.set(id, el);
     return { destroy: () => rowEls.delete(id) };
   }
+
+  function focusRow(id: string | null) {
+    if (id) rowEls.get(id)?.focus();
+  }
+
+  function activeIsRow(): boolean {
+    const active = document.activeElement;
+    return active instanceof HTMLElement && [...rowEls.values()].includes(active);
+  }
+
+  function activeInSortbar(): boolean {
+    const active = document.activeElement;
+    return active instanceof HTMLElement && active.closest('.sortbar') !== null;
+  }
+
+  // In manual mode, make sure a row holds focus so the arrow keys work without a click.
+  // Runs on open and when switching back to manual — but never yanks focus away from the
+  // sort selector the user is operating.
+  $effect(() => {
+    if (!isManual) return;
+    untrack(() => {
+      if (!activeIsRow() && !activeInSortbar()) focusRow(currentId);
+    });
+  });
+
+  // After a reorder the note list (order) changes; re-focus the moved row so repeated
+  // Shift+Arrow presses keep working (both directions) and the drag target stays focused.
+  $effect(() => {
+    // Track the order so this re-runs whenever the list is reordered.
+    void notes.map((n) => n.id).join('\n');
+    untrack(() => {
+      if (!pendingRefocus) return;
+      pendingRefocus = false;
+      focusRow(focusedId);
+    });
+  });
 
   function ids(): string[] {
     return notes.map((n) => n.id);
@@ -80,14 +121,15 @@
     const to = index + dir;
     if (to < 0 || to >= list.length) return;
     if (e.shiftKey) {
-      // Move the focused note one slot; it keeps focus (same keyed node).
+      // Move the focused note one slot; re-focus it once the reorder lands.
       focusedId = list[index];
+      pendingRefocus = true;
       onReorder(moveInList(list, index, to));
     } else {
       // Move focus only.
       const targetId = list[to];
       focusedId = targetId;
-      rowEls.get(targetId)?.focus();
+      focusRow(targetId);
     }
   }
 
@@ -117,7 +159,8 @@
     dragId = null;
     dragOverId = null;
     if (from === -1 || to === -1 || from === to) return;
-    focusedId = list[from];
+    focusedId = list[from]; // the dragged note keeps the highlight after the drop
+    pendingRefocus = true;
     onReorder(moveInList(list, from, to));
   }
 
@@ -157,11 +200,12 @@
       <div
         class="row"
         class:locked={!isManual}
+        class:current={isManual && note.id === currentId}
         class:dragging={dragId === note.id}
         class:dragover={dragOverId === note.id && dragId !== note.id}
         role="option"
-        aria-selected={note.id === (focusedId ?? notes[0]?.id)}
-        tabindex={note.id === (focusedId ?? notes[0]?.id) ? 0 : -1}
+        aria-selected={note.id === currentId}
+        tabindex={note.id === currentId ? 0 : -1}
         aria-label={`${note.title || 'Untitled'}, ${i + 1} of ${notes.length}`}
         use:register={note.id}
         draggable={isManual}
@@ -290,7 +334,6 @@
     border-radius: 6px;
     color: var(--text);
     font-size: 13px;
-    /* A dashed slot separator keeps the reorderable rows visually distinct. */
     background: var(--bg);
   }
 
@@ -300,6 +343,13 @@
 
   .row:hover {
     background: var(--bg-subtle);
+  }
+
+  /* Persistent highlight on the current row (manual mode) so there's always a
+     keyboard-ready target, even when DOM focus is briefly elsewhere. */
+  .row.current {
+    background: var(--bg-subtle);
+    border-color: var(--accent);
   }
 
   .row:focus-visible {
