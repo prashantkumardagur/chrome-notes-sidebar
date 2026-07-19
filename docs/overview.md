@@ -10,6 +10,9 @@ ours**. Interaction model = Google Tasks, but for notes.
 - **Markdown** editor with **View / Edit** tabs; View renders sanitized **GFM** (headings,
   emphasis, lists, links, code, tables, task lists) with syntax-highlighted fenced code for an
   explicit language; raw embedded HTML shows as plain text.
+- **Formatting toolbar** in Edit mode (bold, italic, link, inline code, heading, bulleted list) plus
+  `Cmd/Ctrl+B/I/K` shortcuts scoped to the editor; wraps/unwraps the selection (toggle) and flows
+  through the same autosave as typing.
 - **Autosave** to `chrome.storage.sync`, 3s debounced — cross-device, no account.
 - **Per-note character budget** with a live `used/limit` counter and a save-state dot (Saving / Saved).
 - **Note info popover** (ⓘ) with last-edited time, character/word/line counts, note usage, and a
