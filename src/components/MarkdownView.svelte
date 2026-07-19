@@ -6,12 +6,16 @@
     source = '',
     highlight = null,
     onDismissHighlight,
+    onToggleTask,
   }: {
     source: string;
     // Set when a note is opened from a search result in View mode: highlight every
     // occurrence of `query` and scroll to the one nearest the clicked occurrence.
     highlight?: { query: string; nearestIndex: number } | null;
     onDismissHighlight?: () => void;
+    // Clicking the Nth (document-order) task-list checkbox reports its index so App
+    // can flip the matching source marker and autosave.
+    onToggleTask?: (index: number) => void;
   } = $props();
   const html = $derived(renderMarkdown(source));
 
@@ -23,6 +27,28 @@
   $effect(() => {
     html;
     if (highlight && viewEl) highlightMatchesInView(viewEl, highlight.query, highlight.nearestIndex);
+  });
+
+  // Make genuine task-list checkboxes clickable. Reruns on every `html` change so the
+  // listeners always match the freshly reassigned innerHTML (old nodes/listeners are
+  // discarded with the previous DOM). Scoped to `li > input[type="checkbox"]` — exactly
+  // what `marked` emits for `- [ ]` — so the document-order index lines up with the
+  // source task markers the toggle walks.
+  $effect(() => {
+    html;
+    if (!viewEl || !onToggleTask) return;
+    const boxes = viewEl.querySelectorAll<HTMLInputElement>('li > input[type="checkbox"]');
+    boxes.forEach((box, index) => {
+      box.removeAttribute('disabled');
+      // Listen on `click` (not `change`) so stopPropagation keeps the same click from
+      // bubbling to the container's dismiss() and clearing search highlights — the
+      // container's own handler is `onclick`. The box's visual state is overwritten by
+      // the re-render from the source change anyway.
+      box.addEventListener('click', (e) => {
+        e.stopPropagation();
+        onToggleTask(index);
+      });
+    });
   });
 
   // Any click in the note dismisses the highlights and tells App to drop the

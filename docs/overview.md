@@ -9,7 +9,8 @@ ours**. Interaction model = Google Tasks, but for notes.
 - **Multiple notes** (max 10): a dropdown selector with create / rename / delete and a `used/10` count.
 - **Markdown** editor with **View / Edit** tabs; View renders sanitized **GFM** (headings,
   emphasis, lists, links, code, tables, task lists) with syntax-highlighted fenced code for an
-  explicit language; raw embedded HTML shows as plain text.
+  explicit language; raw embedded HTML shows as plain text. Task-list checkboxes are **tickable in
+  View mode** — clicking one flips `[ ]`↔`[x]` in the note and autosaves.
 - **Formatting toolbar** in Edit mode (bold, italic, link, inline code, heading, bulleted list) plus
   `Cmd/Ctrl+B/I/K` shortcuts scoped to the editor; wraps/unwraps the selection (toggle) and flows
   through the same autosave as typing.
