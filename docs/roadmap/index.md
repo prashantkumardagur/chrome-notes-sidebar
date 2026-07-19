@@ -13,8 +13,6 @@ Each has a self-contained spec in this directory:
   (Manual / Title A–Z / Last edited) and manually reorder (drag + keyboard). Covers the old "Reorder
   notes" and "Sort notes" items. (Adds a `sortMode` field to synced settings **data**, but its UI is in
   the notes dropdown — no dependency on the settings-page revamp.)
-* [Editor preferences](./editor-preferences.md) — font size, line spacing, editor font (mono/sans),
-  and word-wrap, added to the settings UI; synced.
 * [More keyboard shortcuts](./more-shortcuts.md) — in-panel shortcuts for the common actions
   (toggle view/settings/info, new note, cycle notes) behind one keymap; folds in the existing search
   shortcut.
