@@ -33,6 +33,29 @@ describe("renderMarkdown (GFM)", () => {
     expect(html).toContain("const x = 1;");
   });
 
+  describe("syntax highlighting (explicit language only)", () => {
+    it("highlights a fence with a supported language and survives sanitization", () => {
+      const html = renderMarkdown("```js\nconst x = 1;\n```");
+      expect(html).toMatch(/class="hljs-[\w-]+"/);
+      expect(html).toContain("const");
+      expect(html).toContain("x = ");
+      expect(html).toContain('class="hljs language-js"');
+    });
+
+    it("renders a fence with no language as plain, untokenized code", () => {
+      const html = renderMarkdown("```\nconst x = 1;\n```");
+      expect(html).toContain("const x = 1;");
+      expect(html).not.toContain("hljs-");
+    });
+
+    it("renders a fence with an unsupported language as plain, without throwing", () => {
+      expect(() => renderMarkdown("```rust\nfn main() {}\n```")).not.toThrow();
+      const html = renderMarkdown("```rust\nfn main() {}\n```");
+      expect(html).toContain("fn main()");
+      expect(html).not.toContain("hljs-");
+    });
+  });
+
   it("renders Markdown image syntax as a real <img>", () => {
     const html = renderMarkdown("![a](https://e/x.png)");
     expect(html).toContain('src="https://e/x.png"');

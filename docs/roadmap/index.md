@@ -17,8 +17,6 @@ Each has a self-contained spec in this directory:
   (Manual / Title A–Z / Last edited) and manually reorder (drag + keyboard). Covers the old "Reorder
   notes" and "Sort notes" items. (Adds a `sortMode` field to synced settings **data**, but its UI is in
   the notes dropdown — no dependency on the settings-page revamp.)
-* [Code block syntax highlighting](./code-syntax-highlighting.md) — bundled, explicit-language
-  highlighting for fenced code in View, themed for light/dark (MV3-safe, no remote).
 * [Editor preferences](./editor-preferences.md) — font size, line spacing, editor font (mono/sans),
   and word-wrap, added to the settings UI; synced.
   * Depends on [Revamp settings: popover → dedicated page](./settings-page.md) (adds controls to the
