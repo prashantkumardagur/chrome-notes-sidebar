@@ -8,7 +8,8 @@ ours**. Interaction model = Google Tasks, but for notes.
 - Persistent **side panel** (`chrome.sidePanel`), opened from the toolbar icon.
 - **Multiple notes** (max 10): a dropdown selector with create / rename / delete and a `used/10` count.
 - **Markdown** editor with **View / Edit** tabs; View renders sanitized **GFM** (headings,
-  emphasis, lists, links, code, tables, task lists); raw embedded HTML shows as plain text.
+  emphasis, lists, links, code, tables, task lists) with syntax-highlighted fenced code for an
+  explicit language; raw embedded HTML shows as plain text.
 - **Autosave** to `chrome.storage.sync`, 3s debounced — cross-device, no account.
 - **Per-note character budget** with a live `used/limit` counter and a save-state dot (Saving / Saved).
 - **Note info popover** (ⓘ) with last-edited time, character/word/line counts, and note usage.

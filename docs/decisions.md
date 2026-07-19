@@ -25,6 +25,7 @@ Key choices and the reasoning. Terse on purpose — code is the source of truth 
 | **Biome**, recommended rules, 2-space / 120-width | One fast tool for lint + format; `.svelte` left to svelte-check. |
 | **Vitest**, one spec per meaningful function | Fast unit coverage of pure logic; components covered by manual E2E. |
 | Load-unpacked now, stay **MV3-publishable** | Ship immediately; keep the door open to the Web Store. |
+| **Bundled `highlight.js` subset** for fenced code — explicit language only, themed via custom `--hl-*` vars | ~10 curated grammars (core + per-language imports) keep the bundle lean; explicit-only is deterministic and avoids auto-detect weight; no remote/CDN (MV3-safe); the token→var map flips with light/dark. |
 
 ## Process
 | Decision | Why |
