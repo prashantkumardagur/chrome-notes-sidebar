@@ -48,6 +48,10 @@
   // Bumped to ask NoteSelector to open the current note's name in rename mode (new-note
   // button + the rename shortcut). The new-note *shortcut* deliberately skips this.
   let renameSignal = $state(0);
+  // Bumped to ask NoteSelector to run its delete confirmation for the current note (the
+  // delete shortcut). Routed through the selector so the shortcut reuses the same
+  // confirm() prompt and only-one-note guard as clicking 🗑.
+  let deleteSignal = $state(0);
   // Bound to the MarkdownEditor instance (edit mode only) so we can move focus into the
   // textarea after a rename or a shortcut-created note. Undefined whenever it isn't mounted.
   let editorRef = $state<MarkdownEditor>();
@@ -444,6 +448,10 @@
           // Same as clicking ✎: open the current note's name in rename mode.
           renameSignal += 1;
           break;
+        case 'delete-note':
+          // Same as clicking 🗑: ask NoteSelector to confirm, then delete the current note.
+          deleteSignal += 1;
+          break;
         case 'prev-note':
           cycleNote(-1);
           break;
@@ -491,6 +499,7 @@
       onOrganize={() => void openOrganize()}
       searchActive={searching}
       {renameSignal}
+      {deleteSignal}
     />
     <ViewEditTabs bind:mode onchange={clearPendingHighlight} />
   </header>

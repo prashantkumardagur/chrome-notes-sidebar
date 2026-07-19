@@ -35,6 +35,11 @@ describe("matchShortcut", () => {
     expect(matchShortcut(evt("KeyE", { meta: true, shift: true }))).toBe("toggle-view");
     expect(matchShortcut(evt("KeyA", { meta: true, shift: true }))).toBe("new-note");
     expect(matchShortcut(evt("KeyR", { meta: true, shift: true }))).toBe("rename-note");
+    expect(matchShortcut(evt("Backspace", { meta: true, shift: true }))).toBe("delete-note");
+  });
+
+  it("requires Shift for delete-note: Cmd+Backspace alone is not bound", () => {
+    expect(matchShortcut(evt("Backspace", { meta: true, shift: false }))).toBeNull();
   });
 
   it("requires Shift for rename-note: Cmd+R alone is not bound", () => {
