@@ -26,6 +26,7 @@
     type SortMode,
   } from '../lib/settings/settings';
   import { SyncSettingsRepository } from '../lib/settings/SyncSettingsRepository';
+  import { matchShortcut } from '../lib/shortcuts/keymap';
   import type { Note, NoteMeta } from '../lib/storage/NotesRepository';
   import { bodyFitsStorage, MAX_NOTE_CHARS, MAX_NOTES } from '../lib/storage/limits';
   import { SyncNotesRepository } from '../lib/storage/SyncNotesRepository';
@@ -185,6 +186,20 @@
     await loadNote(id);
     // The view preference decides the mode on note change ('persistent' keeps it).
     mode = resolveViewMode(settings.view, mode);
+  }
+
+  /** Move to the previous/next note in the current list order, wrapping at the ends.
+   *  No-op with a single note; falls back to the first note if the current id is gone.
+   *  selectNote already flushes pending edits and applies the view preference. */
+  function cycleNote(delta: number) {
+    if (notes.length <= 1) return;
+    const idx = notes.findIndex((n) => n.id === current?.id);
+    if (idx === -1) {
+      void selectNote(notes[0].id);
+      return;
+    }
+    const next = (idx + delta + notes.length) % notes.length;
+    void selectNote(notes[next].id);
   }
 
   /** Enter search mode: flush pending edits, then snapshot every full note body. */
@@ -381,13 +396,40 @@
     void searchStateRepo.save(snapshot);
   });
 
-  // Cmd/Ctrl+`/` toggles search. This listener lives in the panel document, so it
-  // only fires when the side panel has focus — exactly the "only in our sidebar" scope.
+  // In-panel keyboard shortcuts. This listener lives in the panel document, so it only
+  // fires when the side panel has focus — exactly the "only in our sidebar" scope. A
+  // pure keymap (src/lib/shortcuts/keymap.ts) resolves the event to an action, keeping
+  // the bindings in one testable place. We only preventDefault on a match, so every
+  // other combo (the textarea's ⌘A/C/V/X/Z, the toolbar's ⌘B/I/K) passes through.
   $effect(() => {
     const onKeydown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
-        e.preventDefault();
-        toggleSearch();
+      const action = matchShortcut(e);
+      if (!action) return;
+      e.preventDefault();
+      switch (action) {
+        case 'toggle-search':
+          toggleSearch();
+          break;
+        case 'toggle-settings':
+          toggleSettings();
+          break;
+        case 'toggle-info':
+          setSurface('info', activeSurface !== 'info');
+          break;
+        case 'toggle-view':
+          mode = mode === 'edit' ? 'view' : 'edit';
+          // Mirror the View/Edit tabs, which drop any jump-to-match highlight on toggle.
+          clearPendingHighlight();
+          break;
+        case 'new-note':
+          void createNote();
+          break;
+        case 'prev-note':
+          cycleNote(-1);
+          break;
+        case 'next-note':
+          cycleNote(1);
+          break;
       }
     };
     window.addEventListener('keydown', onKeydown);

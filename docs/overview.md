@@ -16,9 +16,14 @@ ours**. Interaction model = Google Tasks, but for notes.
   through the same autosave as typing.
 - **Autosave** to `chrome.storage.sync`, 3s debounced — cross-device, no account.
 - **Per-note character budget** with a live `used/limit` counter and a save-state dot (Saving / Saved).
+- **In-panel keyboard shortcuts** (active while the side panel has focus): Search (`⌘/Ctrl+/`),
+  toggle Edit/View (`⌘/Ctrl+Shift+E`), Settings (`⌘/Ctrl+,`), Info (`⌘/Ctrl+.`), new note
+  (`⌘/Ctrl+Shift+A`), and previous/next note (`⌘/Ctrl+Shift+,` / `⌘/Ctrl+Shift+.`, wrapping). Driven
+  by one keymap (`src/lib/shortcuts/keymap.ts`) that also backs the popover reference.
 - **Note info popover** (ⓘ) with last-edited time, character/word/line counts, note usage, a
-  collapsible keyboard-shortcuts reference (toggle panel — live rebound key, Search, Close surface),
-  and a collapsible **Markdown cheat sheet** (GFM syntax → result reference for the supported syntax).
+  collapsible keyboard-shortcuts reference (toggle panel — live rebound key — plus the in-panel
+  shortcuts above and Close surface), and a collapsible **Markdown cheat sheet** (GFM syntax → result
+  reference for the supported syntax).
 - **Cross-note search** (🔍 in the note actions, or Cmd/Ctrl+`/`): live regex search over every
   note's body (case-insensitive by default, with an `Aa` match-case toggle), results grouped by note;
   click a result to open that note and jump to the match (selected in Edit mode, highlighted +
