@@ -45,6 +45,8 @@
   let mode = $state<'edit' | 'view'>('edit');
   let status = $state<'saved' | 'saving' | 'error'>('saved');
   let settings = $state<Settings>(DEFAULT_SETTINGS);
+  // Bumped after creating a note so NoteSelector opens the fresh "Untitled" name in rename mode.
+  let renameSignal = $state(0);
   // Single source of truth for which transient surface (dropdown/settings/info/search)
   // is open — only one at a time. See src/lib/ui/surfaces.ts.
   let activeSurface = $state<Surface | null>(null);
@@ -290,6 +292,7 @@
     body = note.body;
     status = 'saved';
     mode = 'edit';
+    renameSignal += 1;
   }
 
   async function renameNote(id: string, title: string) {
@@ -469,6 +472,7 @@
       onSearch={toggleSearch}
       onOrganize={() => void openOrganize()}
       searchActive={searching}
+      {renameSignal}
     />
     <ViewEditTabs bind:mode onchange={clearPendingHighlight} />
   </header>

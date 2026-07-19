@@ -14,6 +14,7 @@
     onSearch,
     onOrganize,
     searchActive = false,
+    renameSignal = 0,
   }: {
     notes: NoteMeta[];
     currentId: string | null;
@@ -27,6 +28,8 @@
     onSearch: () => void;
     onOrganize: () => void;
     searchActive?: boolean;
+    // Bumped by the parent after a note is created, to open its name in rename mode.
+    renameSignal?: number;
   } = $props();
 
   let root: HTMLElement;
@@ -35,6 +38,14 @@
 
   const currentTitle = $derived(notes.find((n) => n.id === currentId)?.title ?? '');
   const atCap = $derived(notes.length >= max);
+
+  // A fresh note lands as "Untitled"; open its name in rename mode when the parent bumps the signal.
+  // undefined until the first run so mount doesn't trigger a spurious rename.
+  let lastRenameSignal: number | undefined;
+  $effect(() => {
+    if (lastRenameSignal !== undefined && renameSignal !== lastRenameSignal) startRename();
+    lastRenameSignal = renameSignal;
+  });
 
   function toggleMenu() {
     if (editing) return;
@@ -52,6 +63,12 @@
     if (atCap) return;
     onOpenChange(false);
     onCreate();
+  }
+
+  // Focus the rename input and pre-select its text so typing replaces the whole name.
+  function focusSelect(node: HTMLInputElement) {
+    node.focus();
+    node.select();
   }
 
   function organize() {
@@ -106,13 +123,12 @@
 <div class="selector" bind:this={root}>
   <div class="group">
     {#if editing}
-      <!-- svelte-ignore a11y_autofocus -->
       <input
         class="rename"
         bind:value={draft}
         onkeydown={onRenameKeydown}
         onblur={commitRename}
-        autofocus
+        use:focusSelect
         aria-label="Rename note"
         maxlength="60"
       />
