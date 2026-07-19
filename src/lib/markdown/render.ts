@@ -11,11 +11,21 @@ import type { LanguageFn } from "highlight.js";
 // `highlight.js` default entry, which pulls in every grammar it ships and bloats the bundle.
 import hljs from "highlight.js/lib/core";
 import bash from "highlight.js/lib/languages/bash";
+import c from "highlight.js/lib/languages/c";
+import cpp from "highlight.js/lib/languages/cpp";
+import csharp from "highlight.js/lib/languages/csharp";
 import css from "highlight.js/lib/languages/css";
+import diff from "highlight.js/lib/languages/diff";
+import dockerfile from "highlight.js/lib/languages/dockerfile";
+import go from "highlight.js/lib/languages/go";
+import java from "highlight.js/lib/languages/java";
 import javascript from "highlight.js/lib/languages/javascript";
 import json from "highlight.js/lib/languages/json";
 import markdown from "highlight.js/lib/languages/markdown";
+import plaintext from "highlight.js/lib/languages/plaintext";
 import python from "highlight.js/lib/languages/python";
+import rust from "highlight.js/lib/languages/rust";
+import shell from "highlight.js/lib/languages/shell";
 import sql from "highlight.js/lib/languages/sql";
 import typescript from "highlight.js/lib/languages/typescript";
 import xml from "highlight.js/lib/languages/xml";
@@ -31,20 +41,27 @@ const LANGUAGES: [name: string, grammar: LanguageFn][] = [
   ["typescript", typescript],
   ["python", python],
   ["bash", bash],
+  ["shell", shell],
+  ["c", c],
+  ["cpp", cpp],
+  ["csharp", csharp],
+  ["go", go],
+  ["rust", rust],
+  ["java", java],
   ["json", json],
   ["xml", xml],
   ["css", css],
   ["markdown", markdown],
   ["sql", sql],
   ["yaml", yaml],
+  ["diff", diff],
+  ["dockerfile", dockerfile],
+  ["plaintext", plaintext],
 ];
 
 for (const [name, grammar] of LANGUAGES) {
   hljs.registerLanguage(name, grammar);
 }
-// hljs ships a separate "shell" grammar (console sessions) that we don't bundle; users
-// typing ```shell almost always mean a plain script, so alias it to the bash grammar we do.
-hljs.registerAliases("shell", { languageName: "bash" });
 
 marked.setOptions({
   gfm: true,
