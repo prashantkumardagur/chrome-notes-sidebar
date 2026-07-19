@@ -51,8 +51,8 @@
       { action: 'quote', label: 'Blockquote', glyph: '❝', key: null },
     ],
     [
-      { action: 'list', label: 'Bulleted list', glyph: '•', key: null },
-      { action: 'orderedList', label: 'Numbered list', glyph: '1.', key: null },
+      { action: 'list', label: 'Bulleted list', glyph: '', key: null },
+      { action: 'orderedList', label: 'Numbered list', glyph: '', key: null },
       { action: 'checkList', label: 'Task list', glyph: '☑', key: null },
     ],
   ];
@@ -136,7 +136,35 @@
           title={buttonTitle(a)}
           aria-label={a.label}
         >
-          {a.glyph}
+          <!-- The two list buttons use line-icons (bullets/numbers + lines); every
+               other button is a text glyph. -->
+          {#if a.action === 'list'}
+            <svg class="icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <circle cx="2.5" cy="4" r="1.3" fill="currentColor" />
+              <circle cx="2.5" cy="8" r="1.3" fill="currentColor" />
+              <circle cx="2.5" cy="12" r="1.3" fill="currentColor" />
+              <path
+                d="M6 4h8M6 8h8M6 12h8"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+            </svg>
+          {:else if a.action === 'orderedList'}
+            <svg class="icon" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path
+                d="M6.5 4h7.5M6.5 8h7.5M6.5 12h7.5"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+              <text x="0.5" y="5.7" font-size="5.5" font-weight="600" fill="currentColor">1</text>
+              <text x="0.5" y="9.7" font-size="5.5" font-weight="600" fill="currentColor">2</text>
+              <text x="0.5" y="13.7" font-size="5.5" font-weight="600" fill="currentColor">3</text>
+            </svg>
+          {:else}
+            {a.glyph}
+          {/if}
         </button>
       {/each}
     {/each}
@@ -189,6 +217,9 @@
 
   .fmt-btn {
     flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     appearance: none;
     border: 1px solid transparent;
     border-radius: 6px;
@@ -198,8 +229,14 @@
     font-size: 12px;
     line-height: 1;
     min-width: 26px;
-    padding: 5px 6px;
+    height: 24px;
+    padding: 0 6px;
     cursor: pointer;
+  }
+
+  .fmt-btn .icon {
+    width: 15px;
+    height: 15px;
   }
 
   .fmt-btn:hover {

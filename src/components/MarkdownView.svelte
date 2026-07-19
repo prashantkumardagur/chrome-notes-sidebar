@@ -218,6 +218,14 @@
     max-width: 100%;
   }
 
+  /* Trim the browser's ~40px list indent to a tighter, uniform gutter shared by
+     bulleted and numbered lists (nested lists indent one gutter each). */
+  .markdown-body :global(ul),
+  .markdown-body :global(ol) {
+    margin: 0.4em 0;
+    padding-left: 1.5em;
+  }
+
   /* Task-list items read as a checkbox + text with no bullet marker (GitHub-style) —
      the checkbox is the marker. Covers both the tight (li > input) and loose
      (li > p > input, when a blank line separates items) shapes marked emits. */
@@ -226,9 +234,11 @@
     list-style: none;
   }
 
+  /* Negative left margin pulls the checkbox into the marker gutter so a task item
+     lines up with a bulleted/numbered item instead of sitting further indented. */
   .markdown-body :global(li > input[type="checkbox"]),
   .markdown-body :global(li > p > input[type="checkbox"]) {
-    margin: 0 0.4em 0 0;
+    margin: 0 0.4em 0 -1.4em;
     vertical-align: middle;
   }
 
