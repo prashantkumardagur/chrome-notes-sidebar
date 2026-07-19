@@ -12,6 +12,7 @@
     onRename,
     onDelete,
     onSearch,
+    onOrganize,
     searchActive = false,
   }: {
     notes: NoteMeta[];
@@ -24,6 +25,7 @@
     onRename: (id: string, title: string) => void;
     onDelete: (id: string) => void;
     onSearch: () => void;
+    onOrganize: () => void;
     searchActive?: boolean;
   } = $props();
 
@@ -50,6 +52,11 @@
     if (atCap) return;
     onOpenChange(false);
     onCreate();
+  }
+
+  function organize() {
+    onOpenChange(false);
+    onOrganize();
   }
 
   function startRename() {
@@ -195,6 +202,9 @@
         {/each}
       </div>
       <div class="sep"></div>
+      <button type="button" class="organize" onclick={organize} title="Sort and reorder notes">
+        <span aria-hidden="true">↕</span> Organize notes
+      </button>
       <div class="footer">
         <button
           type="button"
@@ -365,6 +375,26 @@
     height: 1px;
     background: var(--border);
     margin: 4px 2px;
+  }
+
+  /* Full-width action row above "New note", matching the menu item styling. */
+  .organize {
+    display: block;
+    width: 100%;
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    padding: 6px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .organize:hover {
+    background: var(--bg-subtle);
   }
 
   .footer {

@@ -23,6 +23,10 @@ ours**. Interaction model = Google Tasks, but for notes.
   note's body (case-insensitive by default, with an `Aa` match-case toggle), results grouped by note;
   click a result to open that note and jump to the match (selected in Edit mode, highlighted +
   scrolled to in View mode).
+- **Organize notes** ("Organize notes" in the dropdown): a dedicated page to pick a sort field —
+  **Manual** (custom order), **Title (A–Z)**, or **Last edited** — and, in Manual mode, reorder notes
+  by drag-and-drop or keyboard (↑/↓ to move focus, Shift+↑/↓ to move a note). The choice is synced;
+  an auto-sort field rewrites the stored order and the dropdown reflects it.
 - **Editor preferences** in Settings — font size (S/M/L) and line spacing (comfortable/compact) for
   both Edit and View, plus an editor font (mono/sans) and word-wrap toggle for the Edit textarea;
   synced and applied live via CSS variables.

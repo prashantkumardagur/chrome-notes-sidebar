@@ -9,10 +9,6 @@ sub-points.
 
 Each has a self-contained spec in this directory:
 
-* [Organize notes: sort + reorder](./organize-notes.md) — a dedicated surface to sort notes
-  (Manual / Title A–Z / Last edited) and manually reorder (drag + keyboard). Covers the old "Reorder
-  notes" and "Sort notes" items. (Adds a `sortMode` field to synced settings **data**, but its UI is in
-  the notes dropdown — no dependency on the settings-page revamp.)
 * [More keyboard shortcuts](./more-shortcuts.md) — in-panel shortcuts for the common actions
   (toggle view/settings/info, new note, cycle notes) behind one keymap; folds in the existing search
   shortcut.
@@ -20,5 +16,5 @@ Each has a self-contained spec in this directory:
 ## Deferred
 
 * Password protection
-* Pin notes: a per-note pin that floats notes above the active sort order — revisit after
-  [Organize notes](./organize-notes.md) ships (manual reorder may already cover the need).
+* Pin notes: a per-note pin that floats notes above the active sort order — revisit now that
+  Organize notes (manual reorder + sort fields) has shipped; manual reorder may already cover the need.

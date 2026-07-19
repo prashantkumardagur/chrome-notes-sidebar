@@ -4,12 +4,14 @@
   import MarkdownEditor from '../components/MarkdownEditor.svelte';
   import MarkdownView from '../components/MarkdownView.svelte';
   import NoteSelector from '../components/NoteSelector.svelte';
+  import OrganizeNotes from '../components/OrganizeNotes.svelte';
   import SearchPanel from '../components/SearchPanel.svelte';
   import SettingsPanel from '../components/SettingsPanel.svelte';
   import UtilityBar from '../components/UtilityBar.svelte';
   import ViewEditTabs from '../components/ViewEditTabs.svelte';
   import { backupFileName, buildBackup, parseBackup, serializeBackup } from '../lib/backup/backup';
   import { toggleTaskAtIndex } from '../lib/markdown/tasks';
+  import { sortNotes } from '../lib/notes/sort';
   import { nextUntitledTitle, normalizeTitle } from '../lib/notes/title';
   import type { NoteMatch } from '../lib/search/search';
   import { SessionSearchStateRepository } from '../lib/search/SessionSearchStateRepository';
@@ -21,6 +23,7 @@
     resolveEditorVars,
     resolveViewMode,
     type Settings,
+    type SortMode,
   } from '../lib/settings/settings';
   import { SyncSettingsRepository } from '../lib/settings/SyncSettingsRepository';
   import type { Note, NoteMeta } from '../lib/storage/NotesRepository';
@@ -46,6 +49,9 @@
   let activeSurface = $state<Surface | null>(null);
   const searching = $derived(activeSurface === 'search');
   const showSettings = $derived(activeSurface === 'settings');
+  const organizing = $derived(activeSurface === 'organize');
+  // The active sort field; absence in settings means the default `manual` order.
+  const sortMode = $derived<SortMode>(settings.sortMode ?? 'manual');
   // Snapshot of every full note taken when search opens (list() only has metas).
   let searchNotesData = $state<Note[]>([]);
   // Kept across leaving/re-entering search (and panel close/reopen) so the user
@@ -94,6 +100,29 @@
   }, AUTOSAVE_DELAY_MS);
 
   async function refreshList() {
+    notes = await repo.list();
+    // While an auto-sort field is active, keep the stored order in sync after any
+    // mutation that reaches here (create/save/rename/delete/import). No-op in manual.
+    await applyAutoSort();
+  }
+
+  function sameOrder(a: string[], b: string[]): boolean {
+    return a.length === b.length && a.every((id, i) => id === b[i]);
+  }
+
+  /**
+   * When an auto-sort field is active, rewrite `notes:index` to the sorted order —
+   * but only when it actually differs, so we don't burn a sync write on every save.
+   * Does not call refreshList (would recurse); re-reads the index once itself.
+   */
+  async function applyAutoSort() {
+    // Read the mode off settings directly (not the derived) so a call right after
+    // changeSortMode sees the just-saved value without waiting for a reactive flush.
+    const mode = settings.sortMode ?? 'manual';
+    if (mode === 'manual') return;
+    const sorted = sortNotes(notes, mode);
+    if (sameOrder(notes.map((n) => n.id), sorted.map((n) => n.id))) return;
+    await repo.reorder(sorted.map((n) => n.id));
     notes = await repo.list();
   }
 
@@ -193,6 +222,33 @@
   function toggleSettings() {
     if (showSettings) closeSettings();
     else void openSettings();
+  }
+
+  /** Enter the Organize page. Flush pending edits first so a rename in flight is
+   *  reflected in the Title sort (same reasoning as openSearch/openSettings). */
+  async function openOrganize() {
+    await commitPending();
+    setSurface('organize', true);
+  }
+
+  function closeOrganize() {
+    setSurface('organize', false);
+  }
+
+  /** Manual reorder from the Organize surface: persist the new order, then re-read. */
+  async function reorderNotes(orderedIds: string[]) {
+    await repo.reorder(orderedIds);
+    await refreshList();
+  }
+
+  /** Change the sort field: persist it (omit when manual to keep the stored object
+   *  clean), then apply the new order. Switching to manual leaves the order as-is. */
+  function changeSortMode(mode: SortMode) {
+    const next: Settings = { ...settings };
+    if (mode === 'manual') delete next.sortMode;
+    else next.sortMode = mode;
+    saveSettings(next);
+    void applyAutoSort();
   }
 
   // Opening a result switches to that note (selectNote leaves search + applies the
@@ -369,6 +425,7 @@
       onRename={renameNote}
       onDelete={deleteNote}
       onSearch={toggleSearch}
+      onOrganize={() => void openOrganize()}
       searchActive={searching}
     />
     <ViewEditTabs bind:mode onchange={clearPendingHighlight} />
@@ -383,6 +440,14 @@
         bind:caseSensitive={searchCaseSensitive}
         onOpen={openSearchResult}
         onClose={closeSearch}
+      />
+    {:else if organizing}
+      <OrganizeNotes
+        {notes}
+        {sortMode}
+        onSortModeChange={changeSortMode}
+        onReorder={reorderNotes}
+        onClose={closeOrganize}
       />
     {:else if showSettings}
       <SettingsPanel

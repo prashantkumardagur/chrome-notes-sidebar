@@ -114,6 +114,32 @@ describe("normalizeSettings", () => {
     // biome-ignore lint/suspicious/noExplicitAny: exercising corrupt stored input
     expect("wordWrap" in normalizeSettings({ theme: "system", view: "persistent", wordWrap: 1 as any })).toBe(false);
   });
+
+  it("carries a valid non-default sortMode through", () => {
+    expect(normalizeSettings({ theme: "dark", view: "view", sortMode: "title" })).toEqual({
+      theme: "dark",
+      view: "view",
+      sortMode: "title",
+    });
+    expect(normalizeSettings({ theme: "system", view: "persistent", sortMode: "updated" })).toEqual({
+      ...DEFAULT_SETTINGS,
+      sortMode: "updated",
+    });
+  });
+
+  it("omits sortMode when manual/invalid/absent (keeps a clean { theme, view })", () => {
+    // manual is the default → omitted
+    expect("sortMode" in normalizeSettings({ theme: "dark", view: "view", sortMode: "manual" })).toBe(false);
+    // invalid → dropped
+    // biome-ignore lint/suspicious/noExplicitAny: exercising corrupt stored input
+    expect("sortMode" in normalizeSettings({ theme: "dark", view: "view", sortMode: "created" as any })).toBe(false);
+    // absent → no key
+    expect("sortMode" in normalizeSettings({ theme: "dark", view: "view" })).toBe(false);
+    expect(normalizeSettings({ theme: "dark", view: "view", sortMode: "manual" })).toEqual({
+      theme: "dark",
+      view: "view",
+    });
+  });
 });
 
 describe("resolveEditorVars", () => {

@@ -13,13 +13,14 @@ Key choices and the reasoning. Terse on purpose — code is the source of truth 
 | **GFM, always sanitized** (`marked` + `DOMPurify`) | Familiar markdown; note content is untrusted → must sanitize before render. |
 | **Raw HTML in notes renders as literal text** (escaped in a `marked` `html` renderer override) | Predictable rendering + defense-in-depth; Markdown-generated HTML (headings, tables, task lists, md images) is unaffected, and DOMPurify stays to sanitize that Markdown output (e.g. `javascript:` links). |
 | Oversized save is **blocked and surfaced**, not silently failed | Avoids data-loss surprises when a note can't fit a sync item. |
+| **Sort field (`sortMode`) in synced settings**; **auto-sort rewrites `notes:index`** (not display-only) | One canonical order across the dropdown + Organize page, following the user's devices. Manual is the default (omitted when stored). Auto fields (`title`/`updated`) re-apply after any order-affecting mutation; trade-off (no preserved manual order after auto-sorting) is accepted for a simpler mental model. Reorder writes only when the order actually differs, to respect the sync write-rate limit. |
 
 ## Tech & tooling
 | Decision | Why |
 |---|---|
 | **Svelte 5 + Vite 8 + CRXJS** | Small/fast UI; CRXJS handles MV3 manifest + HMR. |
 | **Repository seams** (`NotesRepository`, `SettingsRepository` — the only files touching `chrome.storage`) | Backend swap (local/cloud) becomes a one-file change per domain. |
-| **Settings in `storage.sync`** (`{theme, view, lastNoteId?}`); theme via `data-theme` on `:root` | Prefs follow the user across devices; a forced `data-theme` overrides `prefers-color-scheme`. `lastNoteId` is a device cursor (last opened note) that reuses the settings item — no new seam; a stale id falls back to `notes[0]`. |
+| **Settings in `storage.sync`** (`{theme, view, lastNoteId?, sortMode?, …}`); theme via `data-theme` on `:root` | Prefs follow the user across devices; a forced `data-theme` overrides `prefers-color-scheme`. `lastNoteId` is a device cursor (last opened note) that reuses the settings item — no new seam; a stale id falls back to `notes[0]`. |
 | **Editor prefs** (font size, line spacing, editor font, word wrap) as optional settings fields, applied via `--` CSS vars from a pure `resolveEditorVars` (like `applyTheme`) | Mirrors the theme system: one unit-testable resolver → root vars the components read, no per-component style logic. Prefs are default-omitted (like `lastNoteId`) to keep stored settings clean. Size/spacing apply to Edit + View; font + wrap are Edit-only (View keeps its own typography, code stays monospace). |
 | **Keyboard shortcut** via `commands` + `onCommand`; `windowId` read off the event `tab` | `sidePanel.open` needs a user gesture — reading `windowId` synchronously (no `await`) keeps it. |
 | **Shortcut *toggles*** — panels hold a port to the worker (`PanelRegistry`); closing signals the panel to `window.close()` itself | Chrome has no `sidePanel.close()`, so open/closed state is tracked via live ports and the panel closes itself on request. |
