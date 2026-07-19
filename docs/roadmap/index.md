@@ -17,8 +17,6 @@ Each has a self-contained spec in this directory:
   the notes dropdown — no dependency on the settings-page revamp.)
 * [Editor preferences](./editor-preferences.md) — font size, line spacing, editor font (mono/sans),
   and word-wrap, added to the settings UI; synced.
-  * Depends on [Revamp settings: popover → dedicated page](./settings-page.md) (adds controls to the
-    settings UI).
 * [Markdown cheat sheet](./markdown-cheat-sheet.md) — a collapsible GFM syntax reference in the ⓘ info
   popover.
 * [More keyboard shortcuts](./more-shortcuts.md) — in-panel shortcuts for the common actions
