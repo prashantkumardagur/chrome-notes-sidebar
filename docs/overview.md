@@ -23,6 +23,9 @@ ours**. Interaction model = Google Tasks, but for notes.
   note's body (case-insensitive by default, with an `Aa` match-case toggle), results grouped by note;
   click a result to open that note and jump to the match (selected in Edit mode, highlighted +
   scrolled to in View mode).
+- **Editor preferences** in Settings — font size (S/M/L) and line spacing (comfortable/compact) for
+  both Edit and View, plus an editor font (mono/sans) and word-wrap toggle for the Edit textarea;
+  synced and applied live via CSS variables.
 - **Reopens on the last note** you had open (remembered in synced settings), falling back to the
   first note if that note no longer exists.
 

@@ -81,7 +81,11 @@
     height: 100%;
     overflow-y: auto;
     padding: 12px 16px;
-    font-size: 14px;
+    /* Shares the font-size + line-height prefs with Edit (resolveEditorVars). The
+       editor-font/word-wrap prefs are intentionally not applied here — View keeps its
+       own typography and code stays monospace. */
+    font-size: var(--content-font-size, 14px);
+    line-height: var(--content-line-height, 1.6);
   }
 
   .empty {

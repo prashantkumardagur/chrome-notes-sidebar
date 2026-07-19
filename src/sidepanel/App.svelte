@@ -13,7 +13,15 @@
   import { nextUntitledTitle, normalizeTitle } from '../lib/notes/title';
   import type { NoteMatch } from '../lib/search/search';
   import { SessionSearchStateRepository } from '../lib/search/SessionSearchStateRepository';
-  import { applyTheme, DEFAULT_SETTINGS, resolveViewMode, type Settings } from '../lib/settings/settings';
+  import {
+    applyEditorVars,
+    applyTheme,
+    DEFAULT_SETTINGS,
+    DEFAULT_WORD_WRAP,
+    resolveEditorVars,
+    resolveViewMode,
+    type Settings,
+  } from '../lib/settings/settings';
   import { SyncSettingsRepository } from '../lib/settings/SyncSettingsRepository';
   import type { Note, NoteMeta } from '../lib/storage/NotesRepository';
   import { bodyFitsStorage, MAX_NOTE_CHARS, MAX_NOTES } from '../lib/storage/limits';
@@ -66,6 +74,10 @@
 
   // Keep the document theme in sync with the preference.
   $effect(() => applyTheme(settings.theme));
+
+  // Apply the editor prefs as CSS vars at the root, same pattern as the theme.
+  // Runs on load (settings restored in onMount) and on every settings change.
+  $effect(() => applyEditorVars(resolveEditorVars(settings)));
 
   function saveSettings(next: Settings) {
     settings = next;
@@ -381,7 +393,13 @@
         onClose={closeSettings}
       />
     {:else if mode === 'edit'}
-      <MarkdownEditor bind:value={body} oninput={onEdit} maxlength={MAX_NOTE_CHARS} select={pendingSelect} />
+      <MarkdownEditor
+        bind:value={body}
+        oninput={onEdit}
+        maxlength={MAX_NOTE_CHARS}
+        select={pendingSelect}
+        wrap={settings.wordWrap ?? DEFAULT_WORD_WRAP}
+      />
     {:else}
       <MarkdownView
         source={body}

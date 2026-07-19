@@ -1,6 +1,17 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import type { Settings, ThemePref, ViewPref } from '../lib/settings/settings';
+  import {
+    DEFAULT_EDITOR_FONT,
+    DEFAULT_FONT_SIZE,
+    DEFAULT_LINE_SPACING,
+    DEFAULT_WORD_WRAP,
+    type EditorFont,
+    type FontSize,
+    type LineSpacing,
+    type Settings,
+    type ThemePref,
+    type ViewPref,
+  } from '../lib/settings/settings';
 
   let {
     settings,
@@ -30,6 +41,29 @@
     { value: 'edit', label: 'Edit' },
     { value: 'view', label: 'View' },
   ];
+  const FONT_SIZE_OPTIONS: { value: FontSize; label: string }[] = [
+    { value: 'sm', label: 'Small' },
+    { value: 'md', label: 'Medium' },
+    { value: 'lg', label: 'Large' },
+  ];
+  const LINE_SPACING_OPTIONS: { value: LineSpacing; label: string }[] = [
+    { value: 'comfortable', label: 'Comfortable' },
+    { value: 'compact', label: 'Compact' },
+  ];
+  const EDITOR_FONT_OPTIONS: { value: EditorFont; label: string }[] = [
+    { value: 'mono', label: 'Mono' },
+    { value: 'sans', label: 'Sans' },
+  ];
+  const WORD_WRAP_OPTIONS: { value: boolean; label: string }[] = [
+    { value: true, label: 'On' },
+    { value: false, label: 'Off' },
+  ];
+
+  // Current effective value for each editor pref (settings omit fields at their default).
+  const fontSize = $derived(settings.fontSize ?? DEFAULT_FONT_SIZE);
+  const lineSpacing = $derived(settings.lineSpacing ?? DEFAULT_LINE_SPACING);
+  const editorFont = $derived(settings.editorFont ?? DEFAULT_EDITOR_FONT);
+  const wordWrap = $derived(settings.wordWrap ?? DEFAULT_WORD_WRAP);
 
   function setTheme(theme: ThemePref) {
     if (theme !== settings.theme) onChange({ ...settings, theme });
@@ -37,6 +71,40 @@
 
   function setView(view: ViewPref) {
     if (view !== settings.view) onChange({ ...settings, view });
+  }
+
+  // Editor prefs: drop the key when at its default (like lastNoteId) so stored
+  // settings stay clean; otherwise set it. No-op when the value is unchanged.
+  function setFontSize(value: FontSize) {
+    if (value === fontSize) return;
+    const next = { ...settings };
+    if (value === DEFAULT_FONT_SIZE) delete next.fontSize;
+    else next.fontSize = value;
+    onChange(next);
+  }
+
+  function setLineSpacing(value: LineSpacing) {
+    if (value === lineSpacing) return;
+    const next = { ...settings };
+    if (value === DEFAULT_LINE_SPACING) delete next.lineSpacing;
+    else next.lineSpacing = value;
+    onChange(next);
+  }
+
+  function setEditorFont(value: EditorFont) {
+    if (value === editorFont) return;
+    const next = { ...settings };
+    if (value === DEFAULT_EDITOR_FONT) delete next.editorFont;
+    else next.editorFont = value;
+    onChange(next);
+  }
+
+  function setWordWrap(value: boolean) {
+    if (value === wordWrap) return;
+    const next = { ...settings };
+    if (value === DEFAULT_WORD_WRAP) delete next.wordWrap;
+    else next.wordWrap = value;
+    onChange(next);
   }
 
   async function handleExport() {
@@ -135,6 +203,70 @@
             class:active={settings.view === opt.value}
             aria-pressed={settings.view === opt.value}
             onclick={() => setView(opt.value)}
+          >
+            {opt.label}
+          </button>
+        {/each}
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Font size</legend>
+      <div class="segmented">
+        {#each FONT_SIZE_OPTIONS as opt (opt.value)}
+          <button
+            type="button"
+            class:active={fontSize === opt.value}
+            aria-pressed={fontSize === opt.value}
+            onclick={() => setFontSize(opt.value)}
+          >
+            {opt.label}
+          </button>
+        {/each}
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Line spacing</legend>
+      <div class="segmented">
+        {#each LINE_SPACING_OPTIONS as opt (opt.value)}
+          <button
+            type="button"
+            class:active={lineSpacing === opt.value}
+            aria-pressed={lineSpacing === opt.value}
+            onclick={() => setLineSpacing(opt.value)}
+          >
+            {opt.label}
+          </button>
+        {/each}
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Editor font</legend>
+      <div class="segmented">
+        {#each EDITOR_FONT_OPTIONS as opt (opt.value)}
+          <button
+            type="button"
+            class:active={editorFont === opt.value}
+            aria-pressed={editorFont === opt.value}
+            onclick={() => setEditorFont(opt.value)}
+          >
+            {opt.label}
+          </button>
+        {/each}
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Word wrap</legend>
+      <div class="segmented">
+        {#each WORD_WRAP_OPTIONS as opt (opt.value)}
+          <button
+            type="button"
+            class:active={wordWrap === opt.value}
+            aria-pressed={wordWrap === opt.value}
+            onclick={() => setWordWrap(opt.value)}
           >
             {opt.label}
           </button>

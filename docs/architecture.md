@@ -16,12 +16,15 @@ src/
     NoteSelector.svelte     note dropdown: select / create / rename / delete + count
     ViewEditTabs.svelte     View / Edit switch
     MarkdownEditor.svelte   markdown textarea (enforces maxlength) + thin formatting toolbar
-                            (bold/italic/link/code/heading/list, Cmd/Ctrl+B/I/K)
+                            (bold/italic/link/code/heading/list, Cmd/Ctrl+B/I/K); reads the
+                            editor-pref CSS vars (size/spacing/font) + a wrap prop
     MarkdownView.svelte     renders sanitized GFM (+ syntax-highlighted fenced code); makes
-                            task-list checkboxes tickable → onToggleTask(index) up to App
+                            task-list checkboxes tickable → onToggleTask(index) up to App;
+                            reads the shared font-size/line-height CSS vars
     CharCounter.svelte      used/limit counter, warns near cap
     UtilityBar.svelte       bottom-left tools: copy-all + info popover
-    SettingsPanel.svelte    settings page: theme + view-on-switch prefs + backup export/import
+    SettingsPanel.svelte    settings page: theme + view-on-switch + editor prefs (font size,
+                            line spacing, editor font, word wrap) + backup export/import
                             (opened via the footer gear; replaces the editor area, like search)
     SearchPanel.svelte      search mode: input + grouped/emphasized results (replaces the editor area)
   lib/
@@ -33,7 +36,8 @@ src/
     settings/
       SettingsRepository.ts    interface — the settings storage seam
       SyncSettingsRepository.ts chrome.storage.sync implementation
-      settings.ts              types, defaults, theme apply + view-mode resolution
+      settings.ts              types, defaults, theme apply + view-mode resolution;
+                               resolveEditorVars (prefs → --editor-*/--content-* CSS vars) + applyEditorVars
     commands/panelToggle.ts    keyboard-command handler (toggles the side panel open/closed)
     search/
       search.ts                pure body-only regex search (case toggle, offsets + line snippets, iteration guard)
@@ -74,7 +78,8 @@ tests/                         Vitest, mirrors src/ (one spec per meaningful mod
 `chrome.storage.sync` (durable, cross-device):
 - `notes:index` → ordered `NoteMeta[]` (`{id, title, updatedAt}`).
 - `note:<id>` → one full `Note` per note.
-- `settings` → `{ theme, view }` (see `settings.ts`).
+- `settings` → `{ theme, view }` plus optional, default-omitted fields (`lastNoteId`, and the
+  editor prefs `fontSize`/`lineSpacing`/`editorFont`/`wordWrap`) — see `settings.ts`.
 
 `chrome.storage.session` (in-memory, per browser session):
 - `search:state` → `{ active, query, collapsed[], caseSensitive }` — the search page to restore on panel reopen.

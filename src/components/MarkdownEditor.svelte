@@ -8,6 +8,7 @@
     oninput,
     maxlength,
     select = null,
+    wrap = true,
   }: {
     value: string;
     oninput?: () => void;
@@ -15,6 +16,9 @@
     // Set when a note is opened from a search result in Edit mode: the exact body
     // range to select + scroll into view. App clears it after so it can't re-fire.
     select?: { start: number; end: number } | null;
+    // Word-wrap pref. Drives the textarea `wrap` attribute (copy semantics); the
+    // visual wrapping comes from the --editor-white-space var set on the root.
+    wrap?: boolean;
   } = $props();
 
   let textarea: HTMLTextAreaElement;
@@ -91,6 +95,7 @@
     bind:value
     {oninput}
     {maxlength}
+    wrap={wrap ? 'soft' : 'off'}
     onkeydown={onKeydown}
     spellcheck="true"
     placeholder="Write your note in Markdown…"
@@ -160,9 +165,13 @@
     background: var(--bg);
     color: var(--text);
     padding: 12px 16px;
-    font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
-    font-size: 13px;
-    line-height: 1.6;
+    /* Driven by the editor prefs (resolveEditorVars); fallbacks match the prior defaults. */
+    font-family: var(--editor-font-family, ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace);
+    font-size: var(--editor-font-size, 13px);
+    line-height: var(--content-line-height, 1.6);
+    /* Word-wrap pref: pre-wrap wraps, pre scrolls long lines (overflow-x reveals them). */
+    white-space: var(--editor-white-space, pre-wrap);
+    overflow-x: auto;
     tab-size: 2;
   }
 </style>
