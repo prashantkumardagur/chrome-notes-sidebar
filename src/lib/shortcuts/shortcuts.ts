@@ -30,6 +30,7 @@ const ACTION_LABELS: Record<ShortcutAction, string> = {
   "toggle-settings": "Settings",
   "toggle-info": "Info",
   "new-note": "New note",
+  "rename-note": "Rename note",
   "prev-note": "Previous note",
   "next-note": "Next note",
 };
@@ -41,6 +42,7 @@ const KEY_LABELS: Record<string, string> = {
   Comma: ",",
   Period: ".",
   KeyA: "A",
+  KeyR: "R",
 };
 
 /** Format one keymap binding as a display chip: "⌘⇧E" on mac, "Ctrl+Shift+E" elsewhere. */

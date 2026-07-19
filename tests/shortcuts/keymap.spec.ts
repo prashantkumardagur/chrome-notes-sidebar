@@ -34,6 +34,11 @@ describe("matchShortcut", () => {
     expect(matchShortcut(evt("Slash", { meta: true }))).toBe("toggle-search");
     expect(matchShortcut(evt("KeyE", { meta: true, shift: true }))).toBe("toggle-view");
     expect(matchShortcut(evt("KeyA", { meta: true, shift: true }))).toBe("new-note");
+    expect(matchShortcut(evt("KeyR", { meta: true, shift: true }))).toBe("rename-note");
+  });
+
+  it("requires Shift for rename-note: Cmd+R alone is not bound", () => {
+    expect(matchShortcut(evt("KeyR", { meta: true, shift: false }))).toBeNull();
   });
 
   it("returns null when neither meta nor ctrl is held", () => {

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import CharCounter from '../components/CharCounter.svelte';
   import MarkdownEditor from '../components/MarkdownEditor.svelte';
   import MarkdownView from '../components/MarkdownView.svelte';
@@ -45,6 +45,12 @@
   let mode = $state<'edit' | 'view'>('edit');
   let status = $state<'saved' | 'saving' | 'error'>('saved');
   let settings = $state<Settings>(DEFAULT_SETTINGS);
+  // Bumped to ask NoteSelector to open the current note's name in rename mode (new-note
+  // button + the rename shortcut). The new-note *shortcut* deliberately skips this.
+  let renameSignal = $state(0);
+  // Bound to the MarkdownEditor instance (edit mode only) so we can move focus into the
+  // textarea after a rename or a shortcut-created note. Undefined whenever it isn't mounted.
+  let editorRef = $state<MarkdownEditor>();
   // Single source of truth for which transient surface (dropdown/settings/info/search)
   // is open — only one at a time. See src/lib/ui/surfaces.ts.
   let activeSurface = $state<Surface | null>(null);
@@ -281,7 +287,9 @@
     }
   }
 
-  async function createNote() {
+  // `rename: true` (the New note button) drops into naming the note; `rename: false`
+  // (the new-note shortcut) keeps "Untitled" and jumps straight into the editor to type.
+  async function createNote({ rename }: { rename: boolean }) {
     if (notes.length >= MAX_NOTES) return;
     await commitPending();
     const note = await repo.create(nextUntitledTitle(notes.map((n) => n.title)));
@@ -290,6 +298,14 @@
     body = note.body;
     status = 'saved';
     mode = 'edit';
+    if (rename) renameSignal += 1;
+    else await focusEditor();
+  }
+
+  /** Move focus into the editor textarea once it's rendered; no-ops if it isn't (e.g. View mode). */
+  async function focusEditor() {
+    await tick();
+    editorRef?.focus();
   }
 
   async function renameNote(id: string, title: string) {
@@ -422,7 +438,11 @@
           clearPendingHighlight();
           break;
         case 'new-note':
-          void createNote();
+          void createNote({ rename: false });
+          break;
+        case 'rename-note':
+          // Same as clicking ✎: open the current note's name in rename mode.
+          renameSignal += 1;
           break;
         case 'prev-note':
           cycleNote(-1);
@@ -463,12 +483,14 @@
       open={activeSurface === 'dropdown'}
       onOpenChange={(o) => setSurface('dropdown', o)}
       onSelect={selectNote}
-      onCreate={createNote}
+      onCreate={() => void createNote({ rename: true })}
       onRename={renameNote}
+      onRenameDone={() => void focusEditor()}
       onDelete={deleteNote}
       onSearch={toggleSearch}
       onOrganize={() => void openOrganize()}
       searchActive={searching}
+      {renameSignal}
     />
     <ViewEditTabs bind:mode onchange={clearPendingHighlight} />
   </header>
@@ -501,6 +523,7 @@
       />
     {:else if mode === 'edit'}
       <MarkdownEditor
+        bind:this={editorRef}
         bind:value={body}
         oninput={onEdit}
         maxlength={MAX_NOTE_CHARS}

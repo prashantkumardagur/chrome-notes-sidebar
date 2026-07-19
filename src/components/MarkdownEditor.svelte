@@ -23,6 +23,12 @@
 
   let textarea: HTMLTextAreaElement;
 
+  // Let the parent move focus into the editor — e.g. after committing a rename or
+  // creating a note via the keyboard shortcut, so the user can start typing at once.
+  export function focus() {
+    textarea?.focus();
+  }
+
   $effect(() => {
     if (select && textarea) selectRangeInTextarea(textarea, select.start, select.end);
   });
