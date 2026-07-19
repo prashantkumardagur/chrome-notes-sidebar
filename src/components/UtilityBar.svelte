@@ -39,6 +39,7 @@
     { syntax: "# Heading", label: "Heading" },
     { syntax: "**bold**", label: "Bold" },
     { syntax: "*italic*", label: "Italic" },
+    { syntax: "~~strike~~", label: "Strikethrough" },
     { syntax: "`code`", label: "Inline code" },
     { syntax: "```", label: "Code block" },
     { syntax: "- item", label: "Bullet list" },

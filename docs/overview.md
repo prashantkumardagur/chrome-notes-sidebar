@@ -14,10 +14,12 @@ ours**. Interaction model = Google Tasks, but for notes.
   emphasis, lists, links, code, tables, task lists) with syntax-highlighted fenced code for an
   explicit language; raw embedded HTML shows as plain text. Task-list checkboxes are **tickable in
   View mode** — clicking one flips `[ ]`↔`[x]` in the note and autosaves.
-- **Formatting toolbar** in Edit mode (bold, italic, link, inline code, heading, bulleted list) plus
-  `Cmd/Ctrl+B/I/K` shortcuts scoped to the editor; wraps/unwraps the selection (toggle) and flows
-  through the same autosave as typing. `Tab`/`Shift+Tab` indent/outdent by 2 spaces instead of
-  moving focus.
+- **Formatting toolbar** in Edit mode, grouped: heading · bold/italic/strikethrough ·
+  link/inline-code/code-block/blockquote · bulleted/numbered/task list — plus `Cmd/Ctrl+B/I/K`
+  shortcuts scoped to the editor; each toggles the selection (wrap/unwrap or line-prefix) and flows
+  through the same autosave as typing. `Enter` inside a bullet, numbered, task, or quote line starts
+  the next line with the same marker (numbered lines increment; backspace to break out).
+  `Tab`/`Shift+Tab` indent/outdent by 2 spaces instead of moving focus.
 - **Autosave** to `chrome.storage.sync`, 3s debounced — cross-device, no account.
 - **Per-note character budget** with a live `used/limit` counter and a save-state dot (Saving / Saved).
 - **In-panel keyboard shortcuts** (active while the side panel has focus): Search (`⌘/Ctrl+/`),

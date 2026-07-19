@@ -4,7 +4,18 @@
  * this module only computes the next text + selection.
  */
 
-export type FormatAction = "bold" | "italic" | "code" | "link" | "heading" | "list";
+export type FormatAction =
+  | "heading"
+  | "bold"
+  | "italic"
+  | "strike"
+  | "link"
+  | "code"
+  | "codeblock"
+  | "quote"
+  | "list"
+  | "orderedList"
+  | "checkList";
 
 export interface FormatResult {
   text: string;
@@ -13,9 +24,10 @@ export interface FormatResult {
 }
 
 /** Marker wrapped around the selection for each inline action. */
-const INLINE_MARKERS: Record<"bold" | "italic" | "code", string> = {
+const INLINE_MARKERS: Record<"bold" | "italic" | "strike" | "code", string> = {
   bold: "**",
   italic: "*",
+  strike: "~~",
   code: "`",
 };
 
@@ -67,6 +79,43 @@ function applyLink(text: string, start: number, end: number): FormatResult {
   // Caret between the empty parens, ready to type the URL.
   const caret = start + 1 + selected.length + 2;
   return { text: before + inserted + after, selectionStart: caret, selectionEnd: caret };
+}
+
+/**
+ * Fenced code block: wraps the selection in ``` fences on their own lines, or
+ * inserts an empty fenced block with the caret on the inner line. Leading/trailing
+ * newlines are added only when the fences wouldn't already sit on their own line.
+ */
+function codeBlock(text: string, start: number, end: number): FormatResult {
+  const before = text.slice(0, start);
+  const selected = text.slice(start, end);
+  const after = text.slice(end);
+
+  const lead = start > 0 && !before.endsWith("\n") ? "\n" : "";
+  const trail = end < text.length && !after.startsWith("\n") ? "\n" : "";
+  const block = `${lead}\`\`\`\n${selected}\n\`\`\`${trail}`;
+  const newText = before + block + after;
+
+  // Caret/selection lands on the inner content line: past `lead` + the "```\n" fence (4 chars).
+  const innerStart = start + lead.length + 4;
+  return { text: newText, selectionStart: innerStart, selectionEnd: innerStart + selected.length };
+}
+
+/**
+ * Ordered-list action: numbers every line the selection touches (`1.`, `2.`, …),
+ * or strips the numbering if every touched line already has it (toggle).
+ */
+function orderedList(text: string, start: number, end: number): FormatResult {
+  const { lineStart, lineEnd } = lineSpan(text, start, end);
+  const lines = text.slice(lineStart, lineEnd).split("\n");
+  const allNumbered = lines.every((line) => /^\d+\. /.test(line));
+  const newLines = allNumbered
+    ? lines.map((line) => line.replace(/^\d+\. /, ""))
+    : lines.map((line, i) => `${i + 1}. ${line}`);
+  const newSpan = newLines.join("\n");
+
+  const newText = text.slice(0, lineStart) + newSpan + text.slice(lineEnd);
+  return { text: newText, selectionStart: lineStart, selectionEnd: lineStart + newSpan.length };
 }
 
 /**
@@ -173,18 +222,67 @@ export function applyFormat(
   switch (action) {
     case "bold":
     case "italic":
+    case "strike":
     case "code":
       return inlineWrap(text, selectionStart, selectionEnd, INLINE_MARKERS[action]);
     case "link":
       return applyLink(text, selectionStart, selectionEnd);
+    case "codeblock":
+      return codeBlock(text, selectionStart, selectionEnd);
     case "heading":
       return linePrefix(text, selectionStart, selectionEnd, "# ");
+    case "quote":
+      return linePrefix(text, selectionStart, selectionEnd, "> ");
     case "list":
       return linePrefix(text, selectionStart, selectionEnd, "- ");
+    case "checkList":
+      return linePrefix(text, selectionStart, selectionEnd, "- [ ] ");
+    case "orderedList":
+      return orderedList(text, selectionStart, selectionEnd);
     default: {
       // Exhaustiveness guard: FormatAction is a closed union, so this is unreachable at compile time.
       const _exhaustive: never = action;
       return _exhaustive;
     }
   }
+}
+
+// Ordered by specificity: a task item ("- [ ] ") also matches the bullet pattern,
+// so it must be tested first. Each captures the leading indent to carry it forward.
+const TASK_MARKER = /^([ \t]*)([-*+]) \[[ xX]\] /;
+const BULLET_MARKER = /^([ \t]*)([-*+]) /;
+const ORDERED_MARKER = /^([ \t]*)(\d+)([.)]) /;
+const QUOTE_MARKER = /^([ \t]*)> /;
+
+/**
+ * The list/quote marker to start the next line with, given the current line's text
+ * up to the caret — or null if it isn't a continuable line. Indent is preserved; a
+ * task item continues unchecked; an ordered item increments its number.
+ */
+function nextLineMarker(lineToCaret: string): string | null {
+  let m = lineToCaret.match(TASK_MARKER);
+  if (m) return `${m[1]}${m[2]} [ ] `;
+  m = lineToCaret.match(BULLET_MARKER);
+  if (m) return `${m[1]}${m[2]} `;
+  m = lineToCaret.match(ORDERED_MARKER);
+  if (m) return `${m[1]}${Number(m[2]) + 1}${m[3]} `;
+  m = lineToCaret.match(QUOTE_MARKER);
+  if (m) return `${m[1]}> `;
+  return null;
+}
+
+/**
+ * Enter inside a list/quote line: compute the newline + continued marker to insert,
+ * or null to let the editor insert a plain newline. The user can backspace the
+ * inserted marker to break out of the list.
+ */
+export function continueList(text: string, start: number, end: number): FormatResult | null {
+  const lineStart = text.lastIndexOf("\n", start - 1) + 1;
+  const marker = nextLineMarker(text.slice(lineStart, start));
+  if (marker === null) return null;
+
+  const insert = `\n${marker}`;
+  const newText = text.slice(0, start) + insert + text.slice(end);
+  const caret = start + insert.length;
+  return { text: newText, selectionStart: caret, selectionEnd: caret };
 }
