@@ -16,8 +16,9 @@ src/
     NoteSelector.svelte     note dropdown: select / create / rename / delete + count
     ViewEditTabs.svelte     View / Edit switch
     MarkdownEditor.svelte   markdown textarea (enforces maxlength) + thin formatting toolbar
-                            (bold/italic/link/code/heading/list, Cmd/Ctrl+B/I/K); reads the
-                            editor-pref CSS vars (size/spacing/font) + a wrap prop
+                            (bold/italic/link/code/heading/list, Cmd/Ctrl+B/I/K); Tab indents /
+                            Shift+Tab outdents by 2 spaces; reads the editor-pref CSS vars
+                            (size/spacing/font) + a wrap prop
     MarkdownView.svelte     renders sanitized GFM (+ syntax-highlighted fenced code); makes
                             task-list checkboxes tickable → onToggleTask(index) up to App;
                             reads the shared font-size/line-height CSS vars
@@ -100,7 +101,8 @@ tests/                         Vitest, mirrors src/ (one spec per meaningful mod
 - **Middle:** Markdown textarea (Edit) or rendered GFM (View) — or, while a transient surface is
   active, that surface's full-page content (search results, settings, organize) replacing the editor/view.
   Edit adds a thin formatting toolbar row above the textarea (bold/italic/link/code/heading/list;
-  `Cmd/Ctrl+B/I/K`), scoped to `MarkdownEditor.svelte` — not shown in View.
+  `Cmd/Ctrl+B/I/K`, plus `Tab`/`Shift+Tab` to indent/outdent by 2 spaces), scoped to
+  `MarkdownEditor.svelte` — not shown in View.
 - **Bottom-left:** tools (copy-all, info popover) + a standalone settings gear (toggles the
   settings page; footer/topbar stay visible while it's open).
 - **Bottom-right:** save-state dot + character counter (`used/limit`).

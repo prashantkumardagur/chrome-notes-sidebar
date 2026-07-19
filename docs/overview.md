@@ -16,7 +16,8 @@ ours**. Interaction model = Google Tasks, but for notes.
   View mode** — clicking one flips `[ ]`↔`[x]` in the note and autosaves.
 - **Formatting toolbar** in Edit mode (bold, italic, link, inline code, heading, bulleted list) plus
   `Cmd/Ctrl+B/I/K` shortcuts scoped to the editor; wraps/unwraps the selection (toggle) and flows
-  through the same autosave as typing.
+  through the same autosave as typing. `Tab`/`Shift+Tab` indent/outdent by 2 spaces instead of
+  moving focus.
 - **Autosave** to `chrome.storage.sync`, 3s debounced — cross-device, no account.
 - **Per-note character budget** with a live `used/limit` counter and a save-state dot (Saving / Saved).
 - **In-panel keyboard shortcuts** (active while the side panel has focus): Search (`⌘/Ctrl+/`),
