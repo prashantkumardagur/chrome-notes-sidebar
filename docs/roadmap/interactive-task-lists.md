@@ -3,10 +3,9 @@
 > Roadmap item (Deferred): "Interactive task lists: toggle `- [ ]`/`- [x]` checkboxes directly in
 > View mode, writing the change back to the note." Its own small PR.
 >
-> **DEPENDS ON [render-html-as-text.md](./render-html-as-text.md) — do not start this task until that
-> one has landed.** That change makes raw HTML render as literal text, which guarantees every checkbox
-> in View mode is a genuine Markdown task-list checkbox (no hand-typed `<input>` can desync the
-> index mapping this task relies on). If that task is not yet merged, pick a different roadmap item.
+> **Prerequisite met:** raw HTML now renders as literal text (shipped in #20), which guarantees every
+> checkbox in View mode is a genuine Markdown task-list checkbox (no hand-typed `<input>` can desync the
+> index mapping this task relies on). This task is unblocked.
 
 ## Why?
 

@@ -43,8 +43,8 @@ replacing the inline `Cmd/Ctrl+/` handler in `App.svelte` with a keymap-driven d
 `cycleNote` helper; docs.
 
 **Out of scope:** user-configurable/rebindable shortcuts (Chrome owns rebinding only for the manifest
-`commands` entry, not page-level keys); a shortcuts cheat-sheet UI (that's
-[keyboard-shortcuts-reference.md](./keyboard-shortcuts-reference.md)); the browser-level panel-toggle
+`commands` entry, not page-level keys); the shortcuts cheat-sheet UI (already shipped in #22 —
+`src/lib/shortcuts/shortcuts.ts` + the info-popover section); the browser-level panel-toggle
 shortcut (`open-panel`, already in the manifest); new `commands` manifest entries.
 
 ## Decisions
@@ -106,8 +106,8 @@ export function matchShortcut(e: Pick<KeyboardEvent,
 
 - `matchShortcut`: return `null` unless `(metaKey || ctrlKey)` and `!altKey`; then find the binding with
   matching `code` and `shift === shiftKey`; return its action or `null`.
-- Optionally export the `BINDINGS` (or a display-friendly view) so
-  [keyboard-shortcuts-reference.md](./keyboard-shortcuts-reference.md) can render from the same source.
+- Optionally export the `BINDINGS` (or a display-friendly view) so the shipped shortcuts reference
+  (`src/lib/shortcuts/shortcuts.ts`, #22) can render from the same source instead of its own list.
 
 ### 2. `src/sidepanel/App.svelte` — dispatch
 
@@ -152,10 +152,9 @@ export function matchShortcut(e: Pick<KeyboardEvent,
   typing. Edge case: pressing `⌘⇧A` while the note-rename input is focused still creates a note — minor
   and acceptable; don't add special-casing unless it proves annoying.
 - **Coordination, not hard dependencies:**
-  - [keyboard-shortcuts-reference.md](./keyboard-shortcuts-reference.md) should display these; whichever
-    task lands second should point the reference list at this keymap so they can't drift.
-  - `toggle-settings` works with today's settings popover and with the page from
-    [settings-page.md](./settings-page.md); no ordering dependency.
+  - The shipped shortcuts reference (`src/lib/shortcuts/shortcuts.ts`, #22) should display these; when
+    this lands, point that reference list at this keymap so the two can't drift.
+  - `toggle-settings` works with the shipped settings page (#21); no ordering dependency.
 - **Accessibility.** These augment, not replace, the mouse affordances; every action still has its
   button. Nothing here should trap focus.
 
