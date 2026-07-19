@@ -17,7 +17,7 @@ src/
     ViewEditTabs.svelte     View / Edit switch
     MarkdownEditor.svelte   markdown textarea (enforces maxlength) + thin formatting toolbar
                             (bold/italic/link/code/heading/list, Cmd/Ctrl+B/I/K)
-    MarkdownView.svelte     renders sanitized GFM
+    MarkdownView.svelte     renders sanitized GFM (+ syntax-highlighted fenced code)
     CharCounter.svelte      used/limit counter, warns near cap
     UtilityBar.svelte       bottom-left tools: copy-all + info popover
     SettingsPanel.svelte    settings page: theme + view-on-switch prefs + backup export/import
@@ -39,13 +39,15 @@ src/
       highlight.ts             jump-to-match: textarea select (edit) + rendered-DOM <mark>s (view)
       searchState.ts           search-UI session state type + normalize
       SessionSearchStateRepository.ts  chrome.storage.session store (restores search on panel reopen)
-    markdown/render.ts         GFM -> sanitized HTML
-    markdown/format.ts         pure text transforms for the toolbar (wrap/unwrap, line-prefix)
+    markdown/
+      render.ts         GFM -> sanitized HTML (+ highlight.js highlighting; curated language list in-file)
+      format.ts         pure text transforms for the toolbar (wrap/unwrap, line-prefix)
     ui/surfaces.ts             single-active-surface coordination — which transient popover/search page is open
     util/debounce.ts           trailing-edge debounce (autosave)
     util/time.ts               relative "last edited" formatting
     notes/title.ts             default/normalized note titles
     notes/stats.ts             pure word/line count for the info popover
+    shortcuts/shortcuts.ts     pure shortcut-row builder for the info popover's shortcuts reference
 tests/                         Vitest, mirrors src/ (one spec per meaningful module)
 ```
 

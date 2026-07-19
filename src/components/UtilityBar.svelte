@@ -1,5 +1,7 @@
 <script lang="ts">
+  import { TOGGLE_PANEL_COMMAND } from '../lib/commands/panelToggle';
   import { lineCount, wordCount } from '../lib/notes/stats';
+  import { buildShortcutRows } from '../lib/shortcuts/shortcuts';
   import { relativeTime } from '../lib/util/time';
 
   let {
@@ -29,6 +31,33 @@
   const isEmpty = $derived(body.length === 0);
   const words = $derived(wordCount(body));
   const lines = $derived(lineCount(body));
+
+  // ⌘ on macOS, Ctrl elsewhere — detected once per component instance (platform doesn't change mid-session).
+  const mac = /Mac/i.test(navigator.platform);
+
+  // Live `open-panel` binding, re-read each time the popover opens so a rebind at
+  // chrome://extensions/shortcuts shows up without reloading the panel. Defaults to
+  // null (→ the platform default label) in tests/non-extension contexts or on error.
+  let toggleKey = $state<string | null>(null);
+  const shortcutRows = $derived(buildShortcutRows({ mac, toggleKey }));
+
+  async function fetchToggleKey() {
+    if (typeof chrome === 'undefined' || !chrome.commands?.getAll) {
+      toggleKey = null;
+      return;
+    }
+    try {
+      const commands = await chrome.commands.getAll();
+      toggleKey = commands.find((c) => c.name === TOGGLE_PANEL_COMMAND)?.shortcut || null;
+    } catch (err) {
+      console.error('Failed to read the toggle-panel shortcut:', err);
+      toggleKey = null;
+    }
+  }
+
+  $effect(() => {
+    if (open) fetchToggleKey();
+  });
 
   async function copyAll() {
     if (isEmpty) return;
@@ -109,6 +138,18 @@
         <dt>Version</dt>
         <dd>{version}</dd>
       </dl>
+
+      <details class="shortcuts">
+        <summary>Keyboard shortcuts</summary>
+        <ul>
+          {#each shortcutRows as row (row.action)}
+            <li>
+              <kbd>{row.keys}</kbd>
+              <span>{row.action}</span>
+            </li>
+          {/each}
+        </ul>
+      </details>
     </div>
   {/if}
 </div>
@@ -177,6 +218,11 @@
     border-radius: 8px;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
     padding: 8px 10px;
+    /* The popover opens upward; with a collapsible section expanded it can grow
+       taller than the panel, so cap it and scroll internally instead of clipping
+       off the top of the viewport. */
+    max-height: min(70vh, 320px);
+    overflow-y: auto;
   }
 
   dl {
@@ -195,5 +241,49 @@
     text-align: right;
     color: var(--text);
     font-variant-numeric: tabular-nums;
+  }
+
+  .shortcuts {
+    margin-top: 8px;
+    border-top: 1px solid var(--border);
+    padding-top: 6px;
+  }
+
+  .shortcuts summary {
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .shortcuts ul {
+    list-style: none;
+    margin: 6px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .shortcuts li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .shortcuts li span {
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .shortcuts kbd {
+    font-family: inherit;
+    font-size: 11px;
+    color: var(--text);
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    white-space: nowrap;
   }
 </style>

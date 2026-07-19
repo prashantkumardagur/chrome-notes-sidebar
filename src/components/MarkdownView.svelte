@@ -100,6 +100,68 @@
     padding: 0;
   }
 
+  /* Syntax-highlight token colors for fenced code blocks with an explicit, supported
+     language (see src/lib/markdown/render.ts). Mapped to --hl-* vars (not a prebuilt hljs
+     theme) so every language themes at once and flips with light/dark. */
+  .markdown-body :global(.hljs-keyword) {
+    color: var(--hl-keyword);
+  }
+
+  .markdown-body :global(.hljs-string) {
+    color: var(--hl-string);
+  }
+
+  .markdown-body :global(.hljs-comment) {
+    color: var(--hl-comment);
+    font-style: italic;
+  }
+
+  .markdown-body :global(.hljs-number) {
+    color: var(--hl-number);
+  }
+
+  .markdown-body :global(.hljs-function) {
+    color: var(--hl-function);
+  }
+
+  .markdown-body :global(.hljs-title) {
+    color: var(--hl-title);
+  }
+
+  .markdown-body :global(.hljs-attr),
+  .markdown-body :global(.hljs-attribute),
+  .markdown-body :global(.hljs-name),
+  .markdown-body :global(.hljs-variable) {
+    color: var(--hl-attr);
+  }
+
+  .markdown-body :global(.hljs-built_in) {
+    color: var(--hl-built-in);
+  }
+
+  .markdown-body :global(.hljs-literal),
+  .markdown-body :global(.hljs-bullet) {
+    color: var(--hl-literal);
+  }
+
+  /* Extra token classes seen across the curated set (xml tag names, css/markdown
+     selectors & headings, markdown links) — reuse the same vars above rather than
+     adding more, so this stays one small map. */
+  .markdown-body :global(.hljs-selector-class),
+  .markdown-body :global(.hljs-selector-id),
+  .markdown-body :global(.hljs-selector-tag),
+  .markdown-body :global(.hljs-section) {
+    color: var(--hl-title);
+  }
+
+  .markdown-body :global(.hljs-link) {
+    color: var(--hl-string);
+  }
+
+  .markdown-body :global(.hljs-meta) {
+    color: var(--hl-comment);
+  }
+
   .markdown-body :global(blockquote) {
     margin: 0.6em 0;
     padding-left: 12px;
