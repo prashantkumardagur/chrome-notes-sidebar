@@ -48,10 +48,17 @@ describe("renderMarkdown (GFM)", () => {
       expect(html).not.toContain("hljs-");
     });
 
-    it("renders a fence with an unsupported language as plain, without throwing", () => {
-      expect(() => renderMarkdown("```rust\nfn main() {}\n```")).not.toThrow();
+    it("highlights a newly-added language (rust) via its grammar", () => {
       const html = renderMarkdown("```rust\nfn main() {}\n```");
-      expect(html).toContain("fn main()");
+      expect(html).toMatch(/class="hljs-[\w-]+"/);
+      expect(html).toContain("fn");
+      expect(html).toContain('class="hljs language-rust"');
+    });
+
+    it("renders a fence with an unsupported language as plain, without throwing", () => {
+      expect(() => renderMarkdown("```haskell\nmain = putStrLn x\n```")).not.toThrow();
+      const html = renderMarkdown("```haskell\nmain = putStrLn x\n```");
+      expect(html).toContain("main = putStrLn x");
       expect(html).not.toContain("hljs-");
     });
   });
