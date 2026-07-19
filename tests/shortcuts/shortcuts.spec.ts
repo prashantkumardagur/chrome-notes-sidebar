@@ -12,20 +12,32 @@ describe("defaultToggleLabel", () => {
 });
 
 describe("buildShortcutRows", () => {
-  it("uses ⌘ modifiers and the default toggle label on mac with no live binding", () => {
+  it("uses ⌘ glyphs and the default toggle label on mac with no live binding", () => {
     const rows = buildShortcutRows({ mac: true, toggleKey: null });
     expect(rows).toEqual([
       { keys: "⌘⇧Y", action: "Toggle panel" },
-      { keys: "⌘+/", action: "Search" },
+      { keys: "⌘/", action: "Search" },
+      { keys: "⌘⇧E", action: "Toggle Edit/View" },
+      { keys: "⌘,", action: "Settings" },
+      { keys: "⌘.", action: "Info" },
+      { keys: "⌘⇧A", action: "New note" },
+      { keys: "⌘⇧,", action: "Previous note" },
+      { keys: "⌘⇧.", action: "Next note" },
       { keys: "Esc", action: "Close surface" },
     ]);
   });
 
-  it("uses Ctrl modifiers and the default toggle label off mac with no live binding", () => {
+  it("uses Ctrl+ prefixes and the default toggle label off mac with no live binding", () => {
     const rows = buildShortcutRows({ mac: false, toggleKey: null });
     expect(rows).toEqual([
       { keys: "Ctrl+Shift+Y", action: "Toggle panel" },
       { keys: "Ctrl+/", action: "Search" },
+      { keys: "Ctrl+Shift+E", action: "Toggle Edit/View" },
+      { keys: "Ctrl+,", action: "Settings" },
+      { keys: "Ctrl+.", action: "Info" },
+      { keys: "Ctrl+Shift+A", action: "New note" },
+      { keys: "Ctrl+Shift+,", action: "Previous note" },
+      { keys: "Ctrl+Shift+.", action: "Next note" },
       { keys: "Esc", action: "Close surface" },
     ]);
   });
@@ -40,18 +52,15 @@ describe("buildShortcutRows", () => {
     expect(rows[0]).toEqual({ keys: "Ctrl+Shift+Y", action: "Toggle panel" });
   });
 
-  it("falls back to the default label when toggleKey is null", () => {
-    const rows = buildShortcutRows({ mac: true, toggleKey: null });
-    expect(rows[0]).toEqual({ keys: "⌘⇧Y", action: "Toggle panel" });
+  it("keeps the Close row as Esc on both platforms", () => {
+    const mac = buildShortcutRows({ mac: true, toggleKey: null });
+    const other = buildShortcutRows({ mac: false, toggleKey: null });
+    expect(mac.at(-1)).toEqual({ keys: "Esc", action: "Close surface" });
+    expect(other.at(-1)).toEqual({ keys: "Esc", action: "Close surface" });
   });
 
-  it("renders the Search row as ⌘+/ on mac and Ctrl+/ otherwise", () => {
-    expect(buildShortcutRows({ mac: true, toggleKey: null })[1]).toEqual({ keys: "⌘+/", action: "Search" });
-    expect(buildShortcutRows({ mac: false, toggleKey: null })[1]).toEqual({ keys: "Ctrl+/", action: "Search" });
-  });
-
-  it("renders the Close row as Esc on both platforms", () => {
-    expect(buildShortcutRows({ mac: true, toggleKey: null })[2]).toEqual({ keys: "Esc", action: "Close surface" });
-    expect(buildShortcutRows({ mac: false, toggleKey: null })[2]).toEqual({ keys: "Esc", action: "Close surface" });
+  it("gives every row a distinct action label (used as the render key)", () => {
+    const actions = buildShortcutRows({ mac: true, toggleKey: null }).map((r) => r.action);
+    expect(new Set(actions).size).toBe(actions.length);
   });
 });

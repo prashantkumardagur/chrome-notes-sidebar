@@ -9,9 +9,7 @@ sub-points.
 
 Each has a self-contained spec in this directory:
 
-* [More keyboard shortcuts](./more-shortcuts.md) — in-panel shortcuts for the common actions
-  (toggle view/settings/info, new note, cycle notes) behind one keymap; folds in the existing search
-  shortcut.
+_(none queued — pick the next item from Deferred or take direction from the user)_
 
 ## Deferred
 

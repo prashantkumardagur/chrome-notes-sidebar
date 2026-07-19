@@ -58,7 +58,12 @@ src/
     notes/title.ts             default/normalized note titles
     notes/stats.ts             pure word/line count for the info popover
     notes/sort.ts              pure ordering of note metas by sort mode (manual/title/updated)
-    shortcuts/shortcuts.ts     pure shortcut-row builder for the info popover's shortcuts reference
+    shortcuts/
+      keymap.ts                pure keymap: binding table + matchShortcut (event.code + exact
+                               modifiers → action); App.svelte's single window keydown listener
+                               dispatches from it; the info-popover reference renders from it too
+      shortcuts.ts             pure shortcut-row builder for the info popover's shortcuts reference
+                               (renders the in-panel rows from keymap.ts so the two can't drift)
 tests/                         Vitest, mirrors src/ (one spec per meaningful module)
 ```
 
