@@ -31,13 +31,16 @@
 
   // Make genuine task-list checkboxes clickable. Reruns on every `html` change so the
   // listeners always match the freshly reassigned innerHTML (old nodes/listeners are
-  // discarded with the previous DOM). Scoped to `li > input[type="checkbox"]` — exactly
-  // what `marked` emits for `- [ ]` — so the document-order index lines up with the
-  // source task markers the toggle walks.
+  // discarded with the previous DOM). Scoped to the two shapes `marked` emits for a task
+  // item: `li > input` (tight list) and `li > p > input` (loose list — produced when a
+  // blank line separates items). querySelectorAll returns document order, so the index
+  // still lines up with the source task markers the toggle walks.
   $effect(() => {
     html;
     if (!viewEl || !onToggleTask) return;
-    const boxes = viewEl.querySelectorAll<HTMLInputElement>('li > input[type="checkbox"]');
+    const boxes = viewEl.querySelectorAll<HTMLInputElement>(
+      'li > input[type="checkbox"], li > p > input[type="checkbox"]',
+    );
     boxes.forEach((box, index) => {
       box.removeAttribute('disabled');
       // Listen on `click` (not `change`) so stopPropagation keeps the same click from
@@ -209,6 +212,27 @@
 
   .markdown-body :global(img) {
     max-width: 100%;
+  }
+
+  /* Task-list items read as a checkbox + text with no bullet marker (GitHub-style) —
+     the checkbox is the marker. Covers both the tight (li > input) and loose
+     (li > p > input, when a blank line separates items) shapes marked emits. */
+  .markdown-body :global(li:has(> input[type="checkbox"])),
+  .markdown-body :global(li:has(> p > input[type="checkbox"])) {
+    list-style: none;
+  }
+
+  .markdown-body :global(li > input[type="checkbox"]),
+  .markdown-body :global(li > p > input[type="checkbox"]) {
+    margin: 0 0.4em 0 0;
+    vertical-align: middle;
+  }
+
+  /* A blank line makes a list "loose", wrapping each item's text in a <p> with block
+     margins — which would space task groups apart unevenly. Collapse that margin so a
+     blank-line-separated task list reads like a single tight checklist. */
+  .markdown-body :global(li:has(> p > input[type="checkbox"]) > p) {
+    margin: 0;
   }
 
   /* Jump-to-match highlights from a search result. Other occurrences get a muted

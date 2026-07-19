@@ -12,6 +12,31 @@ describe("toggleTaskAtIndex", () => {
     expect(toggleTaskAtIndex(source, 2)).toBe(["- [ ] one", "- [ ] two", "- [x] three"].join("\n"));
   });
 
+  it("indexes continuously across blank-line-separated task groups", () => {
+    // A blank line renders the two groups as one loose list; document order still runs
+    // top-to-bottom, so index 2 is the first item of the second group.
+    const source = [
+      "# My task list",
+      "",
+      "- [ ] First point",
+      "- [ ] Second task",
+      "",
+      "- [ ] Second group",
+      "- [x] Last item",
+    ].join("\n");
+    expect(toggleTaskAtIndex(source, 2)).toBe(
+      [
+        "# My task list",
+        "",
+        "- [ ] First point",
+        "- [ ] Second task",
+        "",
+        "- [x] Second group",
+        "- [x] Last item",
+      ].join("\n"),
+    );
+  });
+
   it("preserves surrounding text and indentation byte-for-byte", () => {
     const source = "  - [ ]   deeply spaced   todo  ";
     expect(toggleTaskAtIndex(source, 0)).toBe("  - [x]   deeply spaced   todo  ");
