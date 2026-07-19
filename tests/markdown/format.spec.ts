@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyFormat, indent, outdent } from "../../src/lib/markdown/format";
+import { applyFormat, continueList, indent, outdent } from "../../src/lib/markdown/format";
 
 describe("applyFormat", () => {
   describe("bold", () => {
@@ -79,6 +79,72 @@ describe("applyFormat", () => {
       const result = applyFormat("`for`", 2, 4, "code");
       expect(result.text).toBe("`f`or``");
       expect(result.text).not.toBe("`for`");
+    });
+  });
+
+  describe("strike", () => {
+    it("wraps a non-empty selection", () => {
+      const result = applyFormat("hello world", 0, 5, "strike");
+      expect(result.text).toBe("~~hello~~ world");
+      expect(result.selectionStart).toBe(2);
+      expect(result.selectionEnd).toBe(7);
+    });
+
+    it("unwraps already-struck text (toggle)", () => {
+      const wrapped = applyFormat("hello world", 0, 5, "strike");
+      const result = applyFormat(wrapped.text, wrapped.selectionStart, wrapped.selectionEnd, "strike");
+      expect(result.text).toBe("hello world");
+    });
+  });
+
+  describe("codeblock", () => {
+    it("wraps a selection in fences on their own lines and selects the content", () => {
+      const result = applyFormat("a = 1", 0, 5, "codeblock");
+      expect(result.text).toBe("```\na = 1\n```");
+      expect(result.text.slice(result.selectionStart, result.selectionEnd)).toBe("a = 1");
+    });
+
+    it("inserts an empty fenced block with the caret on the inner line", () => {
+      const result = applyFormat("", 0, 0, "codeblock");
+      expect(result.text).toBe("```\n\n```");
+      expect(result.selectionStart).toBe(result.selectionEnd);
+      expect(result.selectionStart).toBe(4); // past "```\n"
+    });
+
+    it("adds a leading newline when the fence would not start on its own line", () => {
+      const result = applyFormat("text", 4, 4, "codeblock");
+      expect(result.text).toBe("text\n```\n\n```");
+    });
+  });
+
+  describe("quote", () => {
+    it("prefixes the touched lines and toggles off", () => {
+      const added = applyFormat("a\nb", 0, 3, "quote");
+      expect(added.text).toBe("> a\n> b");
+      const removed = applyFormat(added.text, added.selectionStart, added.selectionEnd, "quote");
+      expect(removed.text).toBe("a\nb");
+    });
+  });
+
+  describe("checkList", () => {
+    it("prefixes the touched lines with an unchecked task marker and toggles off", () => {
+      const added = applyFormat("a\nb", 0, 3, "checkList");
+      expect(added.text).toBe("- [ ] a\n- [ ] b");
+      const removed = applyFormat(added.text, added.selectionStart, added.selectionEnd, "checkList");
+      expect(removed.text).toBe("a\nb");
+    });
+  });
+
+  describe("orderedList", () => {
+    it("numbers each touched line", () => {
+      const result = applyFormat("a\nb\nc", 0, 5, "orderedList");
+      expect(result.text).toBe("1. a\n2. b\n3. c");
+    });
+
+    it("strips numbering when every line already has it (toggle)", () => {
+      const text = "1. a\n2. b\n3. c";
+      const result = applyFormat(text, 0, text.length, "orderedList");
+      expect(result.text).toBe("a\nb\nc");
     });
   });
 
@@ -224,6 +290,44 @@ describe("applyFormat", () => {
       const indented = indent(original, 0, original.length);
       const reverted = outdent(indented.text, indented.selectionStart, indented.selectionEnd);
       expect(reverted.text).toBe(original);
+    });
+  });
+
+  describe("continueList (Enter)", () => {
+    it("returns null on a plain line so the editor inserts a normal newline", () => {
+      expect(continueList("hello", 5, 5)).toBeNull();
+    });
+
+    it("continues a bulleted list", () => {
+      const result = continueList("- one", 5, 5);
+      expect(result?.text).toBe("- one\n- ");
+      expect(result?.selectionStart).toBe(8);
+      expect(result?.selectionStart).toBe(result?.selectionEnd);
+    });
+
+    it("continues a quote", () => {
+      const result = continueList("> quoted", 8, 8);
+      expect(result?.text).toBe("> quoted\n> ");
+    });
+
+    it("continues a task list unchecked, even from a checked item", () => {
+      const result = continueList("- [x] done", 10, 10);
+      expect(result?.text).toBe("- [x] done\n- [ ] ");
+    });
+
+    it("increments an ordered list number", () => {
+      const result = continueList("1. first", 8, 8);
+      expect(result?.text).toBe("1. first\n2. ");
+    });
+
+    it("preserves leading indentation and the bullet character", () => {
+      const result = continueList("  * item", 8, 8);
+      expect(result?.text).toBe("  * item\n  * ");
+    });
+
+    it("splits the line when Enter is pressed mid-line, carrying the marker", () => {
+      const result = continueList("- onetwo", 5, 5); // caret between "one" and "two"
+      expect(result?.text).toBe("- one\n- two");
     });
   });
 

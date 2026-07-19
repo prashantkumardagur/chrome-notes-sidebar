@@ -15,9 +15,11 @@ src/
   components/
     NoteSelector.svelte     note dropdown: select / create / rename / delete + count
     ViewEditTabs.svelte     View / Edit switch
-    MarkdownEditor.svelte   markdown textarea (enforces maxlength) + thin formatting toolbar
-                            (bold/italic/link/code/heading/list, Cmd/Ctrl+B/I/K); Tab indents /
-                            Shift+Tab outdents by 2 spaces; reads the editor-pref CSS vars
+    MarkdownEditor.svelte   markdown textarea (enforces maxlength) + grouped formatting toolbar
+                            (heading | bold/italic/strike | link/code/codeblock/quote |
+                            bulleted/numbered/task list; Cmd/Ctrl+B/I/K); Enter inside a
+                            list/quote line continues its marker; Tab indents / Shift+Tab
+                            outdents by 2 spaces; reads the editor-pref CSS vars
                             (size/spacing/font) + a wrap prop
     MarkdownView.svelte     renders sanitized GFM (+ syntax-highlighted fenced code); makes
                             task-list checkboxes tickable → onToggleTask(index) up to App;
@@ -51,7 +53,8 @@ src/
     markdown/
       render.ts         GFM -> sanitized HTML (+ highlight.js highlighting; curated language list in-file)
       tasks.ts          pure toggle of the Nth task-list marker (View-mode checkbox click writes back)
-      format.ts         pure text transforms for the toolbar (wrap/unwrap, line-prefix)
+      format.ts         pure text transforms for the toolbar (inline wrap/unwrap, line-prefix,
+                        fenced code block, numbered list) + continueList (Enter marker carry-over)
     ui/surfaces.ts             single-active-surface coordination — which transient popover/page is open
                                (dropdown / settings / info / search / organize)
     util/debounce.ts           trailing-edge debounce (autosave)
@@ -100,8 +103,9 @@ tests/                         Vitest, mirrors src/ (one spec per meaningful mod
 - **Top:** note selector (left) + View / Edit tabs (right).
 - **Middle:** Markdown textarea (Edit) or rendered GFM (View) — or, while a transient surface is
   active, that surface's full-page content (search results, settings, organize) replacing the editor/view.
-  Edit adds a thin formatting toolbar row above the textarea (bold/italic/link/code/heading/list;
-  `Cmd/Ctrl+B/I/K`, plus `Tab`/`Shift+Tab` to indent/outdent by 2 spaces), scoped to
+  Edit adds a grouped formatting toolbar row above the textarea (heading | bold/italic/strike |
+  link/code/codeblock/quote | bulleted/numbered/task list; `Cmd/Ctrl+B/I/K`, plus `Tab`/`Shift+Tab`
+  to indent/outdent by 2 spaces, and `Enter` to continue a list/quote marker), scoped to
   `MarkdownEditor.svelte` — not shown in View.
 - **Bottom-left:** tools (copy-all, info popover) + a standalone settings gear (toggles the
   settings page; footer/topbar stay visible while it's open).

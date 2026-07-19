@@ -1,6 +1,6 @@
 <script lang="ts">
   import { tick } from 'svelte';
-  import { applyFormat, indent, outdent, type FormatAction, type FormatResult } from '../lib/markdown/format';
+  import { applyFormat, continueList, indent, outdent, type FormatAction, type FormatResult } from '../lib/markdown/format';
   import { selectRangeInTextarea } from '../lib/search/highlight';
 
   let {
@@ -33,18 +33,31 @@
     if (select && textarea) selectRangeInTextarea(textarea, select.start, select.end);
   });
 
-  // Toolbar buttons + their shortcuts, in display order. `key` is the Cmd/Ctrl+<key>
-  // shortcut for the action, or null for actions with no shortcut.
-  const TOOLBAR_ACTIONS: { action: FormatAction; label: string; glyph: string; key: string | null }[] = [
-    { action: 'bold', label: 'Bold', glyph: 'B', key: 'b' },
-    { action: 'italic', label: 'Italic', glyph: 'I', key: 'i' },
-    { action: 'link', label: 'Link', glyph: '🔗', key: 'k' },
-    { action: 'code', label: 'Inline code', glyph: '</>', key: null },
-    { action: 'heading', label: 'Heading', glyph: 'H', key: null },
-    { action: 'list', label: 'Bulleted list', glyph: '•', key: null },
+  type ToolbarButton = { action: FormatAction; label: string; glyph: string; key: string | null };
+
+  // Toolbar buttons grouped into segments; a divider is rendered between groups.
+  // `key` is the Cmd/Ctrl+<key> shortcut for the action, or null when it has none.
+  const TOOLBAR_GROUPS: ToolbarButton[][] = [
+    [{ action: 'heading', label: 'Heading', glyph: 'H', key: null }],
+    [
+      { action: 'bold', label: 'Bold', glyph: 'B', key: 'b' },
+      { action: 'italic', label: 'Italic', glyph: 'I', key: 'i' },
+      { action: 'strike', label: 'Strikethrough', glyph: 'S', key: null },
+    ],
+    [
+      { action: 'link', label: 'Link', glyph: '🔗', key: 'k' },
+      { action: 'code', label: 'Inline code', glyph: '</>', key: null },
+      { action: 'codeblock', label: 'Code block', glyph: '{ }', key: null },
+      { action: 'quote', label: 'Blockquote', glyph: '❝', key: null },
+    ],
+    [
+      { action: 'list', label: 'Bulleted list', glyph: '•', key: null },
+      { action: 'orderedList', label: 'Numbered list', glyph: '1.', key: null },
+      { action: 'checkList', label: 'Task list', glyph: '☑', key: null },
+    ],
   ];
 
-  function buttonTitle(a: (typeof TOOLBAR_ACTIONS)[number]): string {
+  function buttonTitle(a: ToolbarButton): string {
     return a.key ? `${a.label} (Cmd/Ctrl+${a.key.toUpperCase()})` : a.label;
   }
 
@@ -86,6 +99,16 @@
       void runEdit(e.shiftKey ? outdent : indent);
       return;
     }
+    // Enter inside a list/quote line carries the marker to the next line (backspace
+    // to break out); a plain Enter elsewhere falls through to the browser default.
+    if (e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      const result = continueList(value, textarea.selectionStart, textarea.selectionEnd);
+      if (result) {
+        e.preventDefault();
+        void applyResult(result);
+      }
+      return;
+    }
     if (!(e.metaKey || e.ctrlKey)) return;
     const action = SHORTCUT_ACTIONS[e.key.toLowerCase()];
     if (!action) return;
@@ -96,20 +119,26 @@
 
 <div class="editor-surface">
   <div class="toolbar" role="toolbar" aria-label="Formatting">
-    {#each TOOLBAR_ACTIONS as a (a.action)}
-      <button
-        type="button"
-        class="fmt-btn"
-        class:glyph-bold={a.action === 'bold'}
-        class:glyph-italic={a.action === 'italic'}
-        class:glyph-mono={a.action === 'code'}
-        onmousedown={(e) => e.preventDefault()}
-        onclick={() => run(a.action)}
-        title={buttonTitle(a)}
-        aria-label={a.label}
-      >
-        {a.glyph}
-      </button>
+    {#each TOOLBAR_GROUPS as group, i (i)}
+      {#if i > 0}
+        <span class="divider" role="separator" aria-orientation="vertical"></span>
+      {/if}
+      {#each group as a (a.action)}
+        <button
+          type="button"
+          class="fmt-btn"
+          class:glyph-bold={a.action === 'bold'}
+          class:glyph-italic={a.action === 'italic'}
+          class:glyph-strike={a.action === 'strike'}
+          class:glyph-mono={a.action === 'code' || a.action === 'codeblock'}
+          onmousedown={(e) => e.preventDefault()}
+          onclick={() => run(a.action)}
+          title={buttonTitle(a)}
+          aria-label={a.label}
+        >
+          {a.glyph}
+        </button>
+      {/each}
     {/each}
   </div>
   <textarea
@@ -137,13 +166,29 @@
     flex: none;
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 1px;
     padding: 4px 8px;
     border-bottom: 1px solid var(--border);
     background: var(--bg-subtle);
+    /* Eleven buttons can outgrow a narrow side panel; scroll rather than wrap/clip. */
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .toolbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .divider {
+    flex: none;
+    align-self: stretch;
+    width: 1px;
+    margin: 3px 4px;
+    background: var(--border);
   }
 
   .fmt-btn {
+    flex: none;
     appearance: none;
     border: 1px solid transparent;
     border-radius: 6px;
@@ -152,7 +197,8 @@
     font: inherit;
     font-size: 12px;
     line-height: 1;
-    padding: 5px 8px;
+    min-width: 26px;
+    padding: 5px 6px;
     cursor: pointer;
   }
 
@@ -172,6 +218,10 @@
 
   .glyph-italic {
     font-style: italic;
+  }
+
+  .glyph-strike {
+    text-decoration: line-through;
   }
 
   .glyph-mono {
