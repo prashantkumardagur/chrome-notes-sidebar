@@ -16,6 +16,7 @@
     onOrganize,
     searchActive = false,
     renameSignal = 0,
+    deleteSignal = 0,
   }: {
     notes: NoteMeta[];
     currentId: string | null;
@@ -34,6 +35,8 @@
     searchActive?: boolean;
     // Bumped by the parent after a note is created, to open its name in rename mode.
     renameSignal?: number;
+    // Bumped by the parent (delete shortcut) to run the delete confirmation for the current note.
+    deleteSignal?: number;
   } = $props();
 
   let root: HTMLElement;
@@ -49,6 +52,14 @@
   $effect(() => {
     if (lastRenameSignal !== undefined && renameSignal !== lastRenameSignal) startRename();
     lastRenameSignal = renameSignal;
+  });
+
+  // Run the delete confirmation when the parent bumps the signal (delete shortcut).
+  // undefined until the first run so mount doesn't trigger a spurious delete prompt.
+  let lastDeleteSignal: number | undefined;
+  $effect(() => {
+    if (lastDeleteSignal !== undefined && deleteSignal !== lastDeleteSignal) confirmDelete();
+    lastDeleteSignal = deleteSignal;
   });
 
   function toggleMenu() {
@@ -107,7 +118,8 @@
   }
 
   function confirmDelete() {
-    if (!currentId) return;
+    // Mirror the 🗑 button's disabled state: no note, or the last remaining one, can't be deleted.
+    if (!currentId || notes.length <= 1) return;
     if (confirm(`Delete "${currentTitle}"? This can't be undone.`)) onDelete(currentId);
   }
 

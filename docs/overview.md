@@ -24,7 +24,8 @@ ours**. Interaction model = Google Tasks, but for notes.
 - **Per-note character budget** with a live `used/limit` counter and a save-state dot (Saving / Saved).
 - **In-panel keyboard shortcuts** (active while the side panel has focus): Search (`⌘/Ctrl+/`),
   toggle Edit/View (`⌘/Ctrl+Shift+E`), Settings (`⌘/Ctrl+,`), Info (`⌘/Ctrl+.`), new note
-  (`⌘/Ctrl+Shift+A`), rename note (`⌘/Ctrl+Shift+R`), and previous/next note
+  (`⌘/Ctrl+Shift+A`), rename note (`⌘/Ctrl+Shift+R`), delete note (`⌘/Ctrl+Shift+⌫`, with a
+  confirmation prompt), and previous/next note
   (`⌘/Ctrl+Shift+,` / `⌘/Ctrl+Shift+.`, wrapping). Driven by one keymap
   (`src/lib/shortcuts/keymap.ts`) that also backs the popover reference.
 - **Note info popover** (ⓘ) with last-edited time, character/word/line counts, note usage, a
