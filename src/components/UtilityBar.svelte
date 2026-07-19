@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { TOGGLE_PANEL_COMMAND } from '../lib/commands/panelToggle';
-  import { lineCount, wordCount } from '../lib/notes/stats';
-  import { buildShortcutRows } from '../lib/shortcuts/shortcuts';
-  import { relativeTime } from '../lib/util/time';
+  import { TOGGLE_PANEL_COMMAND } from "../lib/commands/panelToggle";
+  import { lineCount, wordCount } from "../lib/notes/stats";
+  import { buildShortcutRows } from "../lib/shortcuts/shortcuts";
+  import { relativeTime } from "../lib/util/time";
 
   let {
     body,
@@ -36,17 +36,17 @@
   // the renderer supports (src/lib/markdown/render.ts). Reference only; the `syntax`
   // strings are shown as literal text (not rendered), so keep them one line each.
   const cheatRows: { syntax: string; label: string }[] = [
-    { syntax: '# Heading', label: 'Heading' },
-    { syntax: '**bold**', label: 'Bold' },
-    { syntax: '*italic*', label: 'Italic' },
-    { syntax: '`code`', label: 'Inline code' },
-    { syntax: '```', label: 'Code block' },
-    { syntax: '- item', label: 'Bullet list' },
-    { syntax: '1. item', label: 'Numbered list' },
-    { syntax: '- [ ] task', label: 'Task list' },
-    { syntax: '[text](url)', label: 'Link' },
-    { syntax: '> quote', label: 'Blockquote' },
-    { syntax: '| a | b |', label: 'Table' },
+    { syntax: "# Heading", label: "Heading" },
+    { syntax: "**bold**", label: "Bold" },
+    { syntax: "*italic*", label: "Italic" },
+    { syntax: "`code`", label: "Inline code" },
+    { syntax: "```", label: "Code block" },
+    { syntax: "- item", label: "Bullet list" },
+    { syntax: "1. item", label: "Numbered list" },
+    { syntax: "- [ ] task", label: "Task list" },
+    { syntax: "[text](url)", label: "Link" },
+    { syntax: "> quote", label: "Blockquote" },
+    { syntax: "| a | b |", label: "Table" },
   ];
 
   // ⌘ on macOS, Ctrl elsewhere — detected once per component instance (platform doesn't change mid-session).
@@ -59,15 +59,16 @@
   const shortcutRows = $derived(buildShortcutRows({ mac, toggleKey }));
 
   async function fetchToggleKey() {
-    if (typeof chrome === 'undefined' || !chrome.commands?.getAll) {
+    if (typeof chrome === "undefined" || !chrome.commands?.getAll) {
       toggleKey = null;
       return;
     }
     try {
       const commands = await chrome.commands.getAll();
-      toggleKey = commands.find((c) => c.name === TOGGLE_PANEL_COMMAND)?.shortcut || null;
+      toggleKey =
+        commands.find((c) => c.name === TOGGLE_PANEL_COMMAND)?.shortcut || null;
     } catch (err) {
-      console.error('Failed to read the toggle-panel shortcut:', err);
+      console.error("Failed to read the toggle-panel shortcut:", err);
       toggleKey = null;
     }
   }
@@ -85,7 +86,7 @@
       // Revert the "Copied" affordance after a moment.
       copyTimer = setTimeout(() => (copied = false), 1500);
     } catch (err) {
-      console.error('Failed to copy note:', err);
+      console.error("Failed to copy note:", err);
     }
   }
 
@@ -100,13 +101,13 @@
       if (root && !root.contains(e.target as Node)) onOpenChange(false);
     };
     const onKeydown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onOpenChange(false);
+      if (e.key === "Escape") onOpenChange(false);
     };
-    document.addEventListener('pointerdown', onPointerDown);
-    document.addEventListener('keydown', onKeydown);
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeydown);
     return () => {
-      document.removeEventListener('pointerdown', onPointerDown);
-      document.removeEventListener('keydown', onKeydown);
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeydown);
     };
   });
 
@@ -121,10 +122,10 @@
       class:copied
       onclick={copyAll}
       disabled={isEmpty}
-      title={isEmpty ? 'Nothing to copy' : 'Copy all text'}
+      title={isEmpty ? "Nothing to copy" : "Copy all text"}
       aria-label="Copy all text"
     >
-      {copied ? '✓' : '⧉'}
+      {copied ? "✓" : "⧉"}
     </button>
     <button
       type="button"
@@ -143,7 +144,7 @@
     <div class="popover" role="dialog" aria-label="Note info">
       <dl>
         <dt>Last edited</dt>
-        <dd>{updatedAt ? relativeTime(updatedAt) : '—'}</dd>
+        <dd>{updatedAt ? relativeTime(updatedAt) : "—"}</dd>
         <dt>Characters</dt>
         <dd>{body.length}/{charLimit}</dd>
         <dt>Words</dt>
@@ -156,8 +157,8 @@
         <dd>{version}</dd>
       </dl>
 
-      <details class="section shortcuts">
-        <summary>Keyboard shortcuts</summary>
+      <section class="section shortcuts">
+        <h3>Keyboard shortcuts</h3>
         <ul>
           {#each shortcutRows as row (row.action)}
             <li>
@@ -166,10 +167,10 @@
             </li>
           {/each}
         </ul>
-      </details>
+      </section>
 
-      <details class="section cheatsheet">
-        <summary>Markdown cheat sheet</summary>
+      <section class="section cheatsheet">
+        <h3>Markdown cheat sheet</h3>
         <ul>
           {#each cheatRows as row (row.label)}
             <li>
@@ -178,7 +179,7 @@
             </li>
           {/each}
         </ul>
-      </details>
+      </section>
     </div>
   {/if}
 </div>
@@ -241,16 +242,15 @@
     bottom: calc(100% + 6px);
     left: 0;
     z-index: 20;
-    min-width: 180px;
+    min-width: 250px;
     background: var(--bg);
     border: 1px solid var(--border);
     border-radius: 8px;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
     padding: 8px 10px;
-    /* The popover opens upward; with a collapsible section expanded it can grow
-       taller than the panel, so cap it and scroll internally instead of clipping
-       off the top of the viewport. */
-    max-height: min(70vh, 320px);
+    /* The popover opens upward and can grow taller than the panel, so cap it and
+       scroll internally instead of clipping off the top of the viewport. */
+    max-height: min(80vh, 900px);
     overflow-y: auto;
   }
 
@@ -272,18 +272,19 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* Collapsible popover sections (keyboard shortcuts, Markdown cheat sheet) share
-     one layout; each is separated from what precedes it by a top divider. */
+  /* Popover sections (keyboard shortcuts, Markdown cheat sheet) share one layout;
+     each is separated from what precedes it by a top divider. */
   .section {
     margin-top: 8px;
     border-top: 1px solid var(--border);
     padding-top: 6px;
   }
 
-  .section summary {
-    cursor: pointer;
+  .section h3 {
+    margin: 0;
     color: var(--text-muted);
     font-size: 12px;
+    font-weight: 600;
   }
 
   .section ul {
